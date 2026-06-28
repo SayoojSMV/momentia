@@ -163,3 +163,31 @@ create policy "Users can manage own materials" on materials
   for all using (
     exists (select 1 from subjects where subjects.id = materials.subject_id and subjects.user_id = auth.uid())
   );
+
+-- Create the trigger function
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, full_name, avatar_url)
+  values (
+    new.id,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Prepopulate the profiles table with existing users
+insert into public.profiles (id, full_name, avatar_url)
+select id, raw_user_meta_data->>'full_name', raw_user_meta_data->>'avatar_url'
+from auth.users
+on conflict (id) do nothing;
