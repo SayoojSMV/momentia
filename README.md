@@ -1,25 +1,121 @@
 # Momentia
 
-A study-management web app for students — organize subjects, materials, 
-and deadlines, and get an AI-generated timetable that adapts as you study.
+> AI-powered study management platform that transforms study materials into personalized roadmaps and dynamically adapts study schedules based on student progress.
 
-## Status
-Design phase mostly complete. Implementation starting.
+---
 
-## Tech stack
-- Frontend: Next.js + Tailwind CSS
-- Backend/Auth/DB/Storage: Supabase
-- AI: Anthropic Claude API (roadmap generation + assistant)
-- Hosting: Vercel
+## 🚀 Project Overview
 
-## Core features
-- Sign in with Google / Microsoft / Apple
-- Add subjects under Academics, Side Quests, or Test Prep, with uploaded materials
-- AI-generated roadmap per subject (units → topics)
-- AI-generated, dynamically updating timetable
-- Per-topic study timer with completion tracking
-- Friends / study-mates with chat
-- Persistent AI assistant, available across the app
+Momentia helps students organize their learning by automatically generating structured learning roadmaps from uploaded study materials and creating an intelligent timetable that updates as topics are completed.
 
-## Getting started
-(To be filled in once the project is scaffolded)
+Unlike traditional timetable applications, Momentia continuously adapts the study schedule according to the student's actual progress.
+
+---
+
+## ✨ Core Features
+
+### 📚 Academic Management
+- Subject management
+- AI-generated learning roadmaps
+- Unit and topic organization
+- Progress tracking
+
+### 🤖 AI Features
+- AI roadmap generation
+- AI chatbot assistant
+- Adaptive timetable generation
+- Intelligent study recommendations
+
+### 📅 Smart Timetable
+- Dynamic scheduling
+- Automatically updates after topic completion
+- Prioritizes upcoming exams
+- Study session recommendations
+
+### 👥 Collaboration
+- Friends / Study mates
+- Progress sharing
+- Chat (planned)
+
+---
+
+## 🛠 Tech Stack
+
+### Frontend
+- Next.js
+- React
+- Tailwind CSS
+
+### Backend
+- Supabase
+
+### Database
+- PostgreSQL (Supabase)
+
+### Authentication
+- Google OAuth
+- Microsoft OAuth (In Progress)
+- Apple OAuth (Planned)
+
+### AI
+- Claude API (Planned)
+
+### Deployment
+- Vercel (Planned)
+
+---
+
+## Current Development Status
+
+✅ Next.js project scaffold
+
+✅ Tailwind CSS setup
+
+✅ ESLint configuration
+
+✅ Supabase integration
+
+✅ Database schema
+
+✅ Row Level Security (RLS)
+
+🚧 Authentication
+
+⬜ Dashboard
+
+⬜ Subject Roadmap
+
+⬜ Study Page
+
+⬜ AI Roadmap Generator
+
+⬜ Dynamic Timetable
+
+⬜ Friends System
+
+⬜ AI Chatbot
+
+---
+
+## Repository Structure
+src/
+app/
+lib/
+supabase/
+docs/
+public/
+
+
+---
+
+## Contributors
+
+Currently maintained by:
+
+- Sayooj Simon
+
+---
+
+## License
+
+MIT License
