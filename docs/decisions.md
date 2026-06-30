@@ -63,3 +63,12 @@ University Microsoft account belongs to an Azure tenant where App Registration p
 Decision:
 
 Use a personal Microsoft account for Azure App Registration.
+
+## 2026-06-30
+
+## Authentication
+- Google sign-in: fully implemented and working (issue #7)
+- Microsoft sign-in: blocked (issue #17) - persistent Azure tenant 
+  misrouting error (AADSTS50020/AADSTS16000), appears to be a 
+  Windows-level cached auth token issue, not fixable via account/browser 
+  changes alone. Deferred; not a blocker for the rest of the app.
