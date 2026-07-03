@@ -172,7 +172,8 @@ export default function SubjectPage({ params }) {
                                 {(topics[unit.id] || []).map((topic) => (
                                     <div
                                         key={topic.id}
-                                        className="flex items-center gap-3 py-2 border-b last:border-0"
+                                        onClick={() => router.push(`/subject/${id}/topic/${topic.id}`)}
+                                        className="flex items-center gap-3 py-2 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded"
                                     >
                                         <div className={`w-3 h-3 rounded-full flex-shrink-0 ${topic.status === 'completed' ? 'bg-black' :
                                             topic.status === 'in_progress' ? 'bg-gray-400' :
