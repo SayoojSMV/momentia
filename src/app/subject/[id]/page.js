@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 
 export default function SubjectPage({ params }) {
     const { id } = use(params)
+    const [materials, setMaterials] = useState([])
+    const [uploading, setUploading] = useState(false)
     const [subject, setSubject] = useState(null)
     const [units, setUnits] = useState([])
     const [expandedUnit, setExpandedUnit] = useState(null)
@@ -47,6 +49,15 @@ export default function SubjectPage({ params }) {
                 .then(({ data, error }) => {
                     if (!error) setUnits(data)
                     setLoading(false)
+                })
+
+            // Fetch materials
+            supabase
+                .from('materials')
+                .select('*')
+                .eq('subject_id', id)
+                .then(({ data, error }) => {
+                    if (!error) setMaterials(data)
                 })
         })
     }, [id, router])
@@ -119,6 +130,44 @@ export default function SubjectPage({ params }) {
         }
     }
 
+    const handleUpload = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        setUploading(true)
+
+        const { data: { session } } = await supabase.auth.getSession()
+        const userId = session.user.id
+        const filePath = `${userId}/${id}/${Date.now()}_${file.name}`
+
+        const { error: uploadError } = await supabase.storage
+            .from('materials')
+            .upload(filePath, file)
+
+        if (uploadError) {
+            console.error(uploadError)
+            setUploading(false)
+            return
+        }
+
+        const { data, error: dbError } = await supabase
+            .from('materials')
+            .insert({
+                subject_id: id,
+                file_name: file.name,
+                storage_path: filePath,
+                file_type: file.type,
+            })
+            .select()
+            .single()
+
+        if (!dbError) {
+            setMaterials((prev) => [...prev, data])
+        }
+
+        setUploading(false)
+    }
+
     if (loading) return null
 
     return (
@@ -141,6 +190,35 @@ export default function SubjectPage({ params }) {
                     <p className="text-sm text-gray-500 mt-1">
                         Exam: {new Date(subject.exam_date).toLocaleDateString()}
                     </p>
+                )}
+            </div>
+
+            {/* Materials */}
+            <div className="bg-white border rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium">Study materials</p>
+                    <label className={`text-sm px-3 py-1 rounded-md cursor-pointer border hover:bg-gray-50 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                        {uploading ? 'Uploading...' : '+ Upload file'}
+                        <input
+                            type="file"
+                            accept=".pdf,.pptx,.docx,.txt,.png,.jpg,.jpeg"
+                            onChange={handleUpload}
+                            className="hidden"
+                        />
+                    </label>
+                </div>
+
+                {materials.length === 0 ? (
+                    <p className="text-gray-400 text-sm">No materials uploaded yet.</p>
+                ) : (
+                    <ul className="space-y-2">
+                        {materials.map((m) => (
+                            <li key={m.id} className="flex items-center gap-2 text-sm text-gray-600">
+                                <span className="text-gray-400">📄</span>
+                                {m.file_name}
+                            </li>
+                        ))}
+                    </ul>
                 )}
             </div>
 
