@@ -23,3 +23,24 @@ All notable changes to Momentia will be documented here.
 - Tailwind CSS
 - ESLint
 - Project documentation
+
+## v0.0.5
+### Added
+- AI roadmap generation using Gemini API
+- File upload to Supabase Storage
+- Topic study page with live stopwatch timer
+- Mark complete with time tracking
+
+## v0.0.4
+### Added
+- Subject roadmap page with expandable units and topics
+- Manual unit and topic creation
+- Subject cards link to roadmap page
+
+## v0.0.3
+### Added
+- Google OAuth sign-in
+- Auto profile creation via database trigger
+- Dashboard with stat tiles and subject cards
+- Add Subject modal
+- Shared Navbar with sign out

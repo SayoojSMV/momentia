@@ -215,3 +215,26 @@ using (
   auth.uid()::text = (storage.foldername(name))[1]
 );
 
+--- ============ SCHEDULE TABLE ============
+create table schedule (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  topic_id uuid references topics on delete cascade not null,
+  subject_id uuid references subjects on delete cascade not null,
+  scheduled_date date not null,
+  created_at timestamp with time zone default now()
+);
+
+alter table schedule enable row level security;
+
+create policy "Users can view own schedule"
+on schedule for select
+using (auth.uid() = user_id);
+
+create policy "Users can insert own schedule"
+on schedule for insert
+with check (auth.uid() = user_id);
+
+create policy "Users can delete own schedule"
+on schedule for delete
+using (auth.uid() = user_id);
