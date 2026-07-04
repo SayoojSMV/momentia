@@ -192,7 +192,8 @@ select id, raw_user_meta_data->>'full_name', raw_user_meta_data->>'avatar_url'
 from auth.users
 on conflict (id) do nothing;
 
---- Storage policies for materials bucket
+-- ============ STORAGE POLICIES ============
+-- (materials bucket must be created manually in Supabase dashboard)
 create policy "Users can upload own materials"
 on storage.objects for insert
 with check (
@@ -213,3 +214,4 @@ using (
   bucket_id = 'materials' and
   auth.uid()::text = (storage.foldername(name))[1]
 );
+

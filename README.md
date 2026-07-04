@@ -121,3 +121,14 @@ Currently maintained by:
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Status
+Core study flow complete. Timetable, friends/chat, and AI chatbot in progress.
+
+## What's built so far
+- Google sign-in via Supabase Auth
+- Dashboard with stat tiles, subject cards, Add Subject modal
+- Subject page with units and topics (manual + AI generated)
+- AI roadmap generation from uploaded materials (Gemini API)
+- File upload to Supabase Storage
+- Topic study page with live timer and mark complete
