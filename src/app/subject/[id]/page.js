@@ -17,6 +17,8 @@ export default function SubjectPage({ params }) {
     const [newUnitName, setNewUnitName] = useState('')
     const [showTopicInput, setShowTopicInput] = useState(null)
     const [newTopicName, setNewTopicName] = useState('')
+    const [generating, setGenerating] = useState(false)
+    const [generateError, setGenerateError] = useState(null)
     const router = useRouter()
 
     useEffect(() => {
@@ -168,6 +170,49 @@ export default function SubjectPage({ params }) {
         setUploading(false)
     }
 
+    const handleGenerateRoadmap = async () => {
+        if (materials.length === 0) {
+            setGenerateError('Upload at least one file before generating a roadmap.')
+            return
+        }
+
+        setGenerating(true)
+        setGenerateError(null)
+
+        const response = await fetch('/api/generate-roadmap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subjectId: id,
+                subjectName: subject.name,
+                materials,
+            }),
+        })
+
+        const result = await response.json()
+
+        if (!response.ok || result.error) {
+            setGenerateError(result.error || 'Something went wrong.')
+            setGenerating(false)
+            return
+        }
+
+        // Refetch units after generation
+        const { data, error } = await supabase
+            .from('units')
+            .select('*')
+            .eq('subject_id', id)
+            .order('order_index', { ascending: true })
+
+        if (!error) {
+            setUnits(data)
+            setTopics({})
+            setExpandedUnit(null)
+        }
+
+        setGenerating(false)
+    }
+
     if (loading) return null
 
     return (
@@ -219,6 +264,28 @@ export default function SubjectPage({ params }) {
                             </li>
                         ))}
                     </ul>
+                )}
+            </div>
+
+            {/* Generate roadmap button */}
+            <div className="mb-6">
+                <button
+                    onClick={handleGenerateRoadmap}
+                    disabled={generating || materials.length === 0}
+                    className={`w-full py-3 rounded-lg text-sm font-medium border transition ${generating || materials.length === 0
+                            ? 'opacity-50 cursor-not-allowed bg-white text-gray-400'
+                            : 'bg-black text-white hover:bg-gray-800'
+                        }`}
+                >
+                    {generating ? 'Generating roadmap...' : '✨ Generate roadmap with AI'}
+                </button>
+                {generateError && (
+                    <p className="text-red-500 text-sm mt-2">{generateError}</p>
+                )}
+                {materials.length === 0 && (
+                    <p className="text-gray-400 text-xs mt-1 text-center">
+                        Upload materials first to enable AI generation
+                    </p>
                 )}
             </div>
 

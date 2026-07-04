@@ -191,3 +191,25 @@ insert into public.profiles (id, full_name, avatar_url)
 select id, raw_user_meta_data->>'full_name', raw_user_meta_data->>'avatar_url'
 from auth.users
 on conflict (id) do nothing;
+
+--- Storage policies for materials bucket
+create policy "Users can upload own materials"
+on storage.objects for insert
+with check (
+  bucket_id = 'materials' and
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+create policy "Users can read own materials"
+on storage.objects for select
+using (
+  bucket_id = 'materials' and
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+create policy "Users can delete own materials"
+on storage.objects for delete
+using (
+  bucket_id = 'materials' and
+  auth.uid()::text = (storage.foldername(name))[1]
+);
