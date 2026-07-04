@@ -17,6 +17,7 @@ export default function Dashboard() {
   const [subjects, setSubjects] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [newSubject, setNewSubject] = useState({ name: '', category: 'academics', exam_date: '' })
+  const [todaySessions, setTodaySessions] = useState([])
   const router = useRouter()
 
   useEffect(() => {
@@ -28,12 +29,28 @@ export default function Dashboard() {
       setUser(session.user)
       setLoading(false)
 
+      // Fetch subjects
       supabase
         .from('subjects')
         .select('*')
         .order('created_at', { ascending: true })
         .then(({ data, error }) => {
           if (!error) setSubjects(data)
+        })
+
+      // Fetch today's schedule
+      const todayStr = new Date().toISOString().split('T')[0]
+      supabase
+        .from('schedule')
+        .select(`
+          *,
+          topics(name, minutes),
+          subjects(name)
+        `)
+        .eq('user_id', session.user.id)
+        .eq('scheduled_date', todayStr)
+        .then(({ data, error }) => {
+          if (!error) setTodaySessions(data)
         })
     })
   }, [router])
@@ -93,8 +110,38 @@ export default function Dashboard() {
 
       {/* Today panel */}
       <div className="border rounded-lg p-4 mb-8 bg-white">
-        <p className="text-sm font-medium text-gray-700">Today</p>
-        <p className="text-gray-400 text-sm mt-1">Timetable not generated yet</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-medium text-gray-700">Today</p>
+          <Link href="/timetable" className="text-xs text-gray-400 hover:text-gray-700">
+            View full timetable →
+          </Link>
+        </div>
+        {todaySessions.length === 0 ? (
+          <p className="text-gray-400 text-sm">
+            No sessions scheduled —{' '}
+            <Link href="/timetable" className="underline">
+              generate a timetable
+            </Link>
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {todaySessions.map((session) => (
+              <div
+                key={session.id}
+                onClick={() =>
+                  router.push(`/subject/${session.subject_id}/topic/${session.topic_id}`)
+                }
+                className="flex items-center justify-between py-2 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded px-1"
+              >
+                <div>
+                  <p className="text-sm font-medium">{session.topics?.name}</p>
+                  <p className="text-xs text-gray-400">{session.subjects?.name}</p>
+                </div>
+                <p className="text-xs text-gray-500">{session.topics?.minutes} min</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Subjects */}
