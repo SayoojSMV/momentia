@@ -19,6 +19,9 @@ export default function Navbar() {
         <Link href="/timetable" className="text-sm text-gray-500 hover:text-gray-800">
           Timetable
         </Link>
+        <Link href="/friends" className="text-sm text-gray-500 hover:text-gray-800">
+          Friends
+        </Link>
       </div>
       <button
         onClick={handleSignOut}
