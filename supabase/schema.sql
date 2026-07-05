@@ -238,3 +238,56 @@ with check (auth.uid() = user_id);
 create policy "Users can delete own schedule"
 on schedule for delete
 using (auth.uid() = user_id);
+
+--- ============ FRIEND REQUESTS AND MESSAGES TABLES ============
+create table friend_requests (
+  id uuid default gen_random_uuid() primary key,
+  sender_id uuid references auth.users on delete cascade not null,
+  receiver_id uuid references auth.users on delete cascade not null,
+  status text default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  created_at timestamp with time zone default now(),
+  unique(sender_id, receiver_id)
+);
+
+create table messages (
+  id uuid default gen_random_uuid() primary key,
+  sender_id uuid references auth.users on delete cascade not null,
+  receiver_id uuid references auth.users on delete cascade not null,
+  content text not null,
+  created_at timestamp with time zone default now()
+);
+
+alter table friend_requests enable row level security;
+alter table messages enable row level security;
+
+create policy "Users can view own friend requests"
+on friend_requests for select
+using (auth.uid() = sender_id or auth.uid() = receiver_id);
+
+create policy "Users can send friend requests"
+on friend_requests for insert
+with check (auth.uid() = sender_id);
+
+create policy "Users can update received requests"
+on friend_requests for update
+using (auth.uid() = receiver_id);
+
+create policy "Users can view own messages"
+on messages for select
+using (auth.uid() = sender_id or auth.uid() = receiver_id);
+
+create policy "Users can send messages"
+on messages for insert
+with check (auth.uid() = sender_id);
+
+--user search policy
+create policy "Users can view all profiles for search"
+on profiles for select
+using (auth.uid() is not null);
+
+--- ============ REALTIME PUBLICATION ============
+alter publication supabase_realtime add table messages;
+
+--- ============ INDEXES ============
+create index if not exists messages_sender_id_idx on messages(sender_id);
+create index if not exists messages_receiver_id_idx on messages(receiver_id);
