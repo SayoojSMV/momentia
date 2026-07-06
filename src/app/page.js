@@ -76,6 +76,22 @@ export default function Dashboard() {
     }
   }
 
+  const handleDeleteSubject = async (e, subjectId) => {
+    e.preventDefault() // stop Link navigation
+    e.stopPropagation()
+    const confirmed = window.confirm('Are you sure you want to remove this subject? All units, topics, and materials will be deleted.')
+    if (!confirmed) return
+
+    const { error } = await supabase
+      .from('subjects')
+      .delete()
+      .eq('id', subjectId)
+
+    if (!error) {
+      setSubjects((prev) => prev.filter((s) => s.id !== subjectId))
+    }
+  }
+
   if (loading) return null
 
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
@@ -161,7 +177,7 @@ export default function Dashboard() {
           </p>
         ) : (
           subjects.map((subject) => (
-            <SubjectCard key={subject.id} subject={subject} />
+            <SubjectCard key={subject.id} subject={subject} onDelete={handleDeleteSubject} />
           ))
         )}
       </div>
@@ -238,12 +254,19 @@ function StatTile({ label, value }) {
   )
 }
 
-function SubjectCard({ subject }) {
+function SubjectCard({ subject, onDelete }) {
   return (
     <Link href={`/subject/${subject.id}`}>
-      <div className="border rounded-lg p-4 bg-white hover:shadow-sm cursor-pointer transition">
+      <div className="border rounded-lg p-4 bg-white hover:shadow-sm cursor-pointer transition relative">
+        <button
+          onClick={(e) => onDelete(e, subject.id)}
+          className="absolute top-2 right-2 text-gray-300 hover:text-red-400 text-sm"
+          title="Remove subject"
+        >
+          ✕
+        </button>
         <p className="text-xs text-gray-400 uppercase">{subject.category.replace('_', ' ')}</p>
-        <p className="font-medium mt-1">{subject.name}</p>
+        <p className="font-medium mt-1 pr-4">{subject.name}</p>
         <div className="w-full bg-gray-100 rounded-full h-2 mt-3">
           <div className="bg-black h-2 rounded-full" style={{ width: '0%' }} />
         </div>

@@ -271,21 +271,28 @@ export default function SubjectPage({ params }) {
             <div className="mb-6">
                 <button
                     onClick={handleGenerateRoadmap}
-                    disabled={generating || materials.length === 0}
-                    className={`w-full py-3 rounded-lg text-sm font-medium border transition ${generating || materials.length === 0
+                    disabled={generating}
+                    className={`w-full py-3 rounded-lg text-sm font-medium border transition ${generating
                             ? 'opacity-50 cursor-not-allowed bg-white text-gray-400'
-                            : 'bg-black text-white hover:bg-gray-800'
+                            : materials.length > 0
+                                ? 'bg-black text-white hover:bg-gray-800'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                         }`}
                 >
-                    {generating ? 'Generating roadmap...' : '✨ Generate roadmap with AI'}
+                    {generating
+                        ? 'Generating roadmap...'
+                        : materials.length > 0
+                            ? '✨ Generate roadmap from materials'
+                            : '✨ Generate roadmap from subject name'}
                 </button>
+                {materials.length === 0 && !generating && (
+                    <p className="text-gray-400 text-xs mt-1 text-center">
+                        No materials uploaded — roadmap will be generated based on the subject name only.
+                        Upload materials for a more accurate roadmap.
+                    </p>
+                )}
                 {generateError && (
                     <p className="text-red-500 text-sm mt-2">{generateError}</p>
-                )}
-                {materials.length === 0 && (
-                    <p className="text-gray-400 text-xs mt-1 text-center">
-                        Upload materials first to enable AI generation
-                    </p>
                 )}
             </div>
 

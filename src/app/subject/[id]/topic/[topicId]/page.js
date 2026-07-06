@@ -11,6 +11,8 @@ export default function TopicPage({ params }) {
   const [loading, setLoading] = useState(true)
   const [seconds, setSeconds] = useState(0)
   const [completed, setCompleted] = useState(false)
+  const [content, setContent] = useState(null)
+  const [generatingContent, setGeneratingContent] = useState(false)
   const intervalRef = useRef(null)
   const savedSecondsRef = useRef(0)
   const router = useRouter()
@@ -38,6 +40,58 @@ export default function TopicPage({ params }) {
           savedSecondsRef.current = data.time_spent_seconds || 0
           setCompleted(data.status === 'completed')
           setLoading(false)
+
+          // Load existing content or generate it
+          if (data.content) {
+            setContent(data.content)
+          } else {
+            setGeneratingContent(true)
+            fetch('/api/generate-content', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                topicId,
+                topicName: data.name,
+                subjectName: '', // will be fetched below
+                difficulty: data.difficulty,
+              }),
+            })
+              .then((r) => r.json())
+              .then((result) => {
+                if (result.content) setContent(result.content)
+                setGeneratingContent(false)
+              })
+          }
+
+          // Fetch subject name for content generation context
+          supabase
+            .from('units')
+            .select('subject_id, subjects(name)')
+            .eq('id', data.unit_id)
+            .single()
+            .then(({ data: unitData }) => {
+              if (!unitData) return
+              const subjectName = unitData.subjects?.name || ''
+
+              if (!data.content) {
+                setGeneratingContent(true)
+                fetch('/api/generate-content', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    topicId,
+                    topicName: data.name,
+                    subjectName,
+                    difficulty: data.difficulty,
+                  }),
+                })
+                  .then((r) => r.json())
+                  .then((result) => {
+                    if (result.content) setContent(result.content)
+                    setGeneratingContent(false)
+                  })
+              }
+            })
 
           // Find the next topic in the same unit
           supabase
@@ -120,11 +174,10 @@ export default function TopicPage({ params }) {
 
       {/* Topic header */}
       <div className="mb-6">
-        <span className={`text-xs px-2 py-1 rounded-full ${
-          topic.difficulty === 'easy' ? 'bg-gray-100 text-gray-500' :
+        <span className={`text-xs px-2 py-1 rounded-full ${topic.difficulty === 'easy' ? 'bg-gray-100 text-gray-500' :
           topic.difficulty === 'medium' ? 'bg-gray-200 text-gray-600' :
-          'bg-gray-800 text-white'
-        }`}>
+            'bg-gray-800 text-white'
+          }`}>
           {topic.difficulty}
         </span>
         <h1 className="text-2xl font-semibold mt-2">{topic.name}</h1>
@@ -144,12 +197,16 @@ export default function TopicPage({ params }) {
         )}
       </div>
 
-      {/* Content placeholder */}
+      {/* Content */}
       <div className="bg-white border rounded-lg p-6 mb-6">
-        <p className="text-sm font-medium text-gray-700 mb-2">Study content</p>
-        <p className="text-gray-400 text-sm">
-          AI-generated content will appear here after uploading study materials in issue #11.
-        </p>
+        <p className="text-sm font-medium text-gray-700 mb-3">Study content</p>
+        {generatingContent ? (
+          <p className="text-gray-400 text-sm">Generating study content...</p>
+        ) : content ? (
+          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{content}</p>
+        ) : (
+          <p className="text-gray-400 text-sm">Could not generate content. Try refreshing.</p>
+        )}
       </div>
 
       {/* Actions */}

@@ -86,9 +86,33 @@ Call save_roadmap exactly once with the complete roadmap.`
       return Response.json({ error: 'No roadmap generated' }, { status: 500 })
     }
 
-    const { units } = functionCall.functionCall.args
+    const { units } = toolUse.input
 
-    // Delete existing units and topics (clean regeneration)
+    // Fetch existing topics that are completed or in_progress — preserve these
+    const { data: existingUnits } = await supabase
+      .from('units')
+      .select('id, name')
+      .eq('subject_id', subjectId)
+
+    const preservedTopics = []
+    if (existingUnits?.length) {
+      for (const unit of existingUnits) {
+        const { data: existingTopics } = await supabase
+          .from('topics')
+          .select('*')
+          .eq('unit_id', unit.id)
+          .in('status', ['completed', 'in_progress'])
+
+        if (existingTopics?.length) {
+          preservedTopics.push(...existingTopics.map(t => ({
+            ...t,
+            unitName: unit.name
+          })))
+        }
+      }
+    }
+
+    // Delete existing units and topics
     await supabase.from('units').delete().eq('subject_id', subjectId)
 
     // Insert new units and topics
@@ -109,6 +133,12 @@ Call save_roadmap exactly once with the complete roadmap.`
 
       for (let j = 0; j < unit.topics.length; j++) {
         const topic = unit.topics[j]
+
+        // Check if this topic was completed/in-progress before regeneration
+        const preserved = preservedTopics.find(
+          (p) => p.name.toLowerCase() === topic.name.toLowerCase()
+        )
+
         await supabase.from('topics').insert({
           unit_id: unitData.id,
           name: topic.name,
@@ -116,6 +146,9 @@ Call save_roadmap exactly once with the complete roadmap.`
           minutes: topic.minutes,
           order_index: j,
           source: 'from_materials',
+          status: preserved?.status || 'not_started',
+          time_spent_seconds: preserved?.time_spent_seconds || 0,
+          content: preserved?.content || null,
         })
       }
     }
