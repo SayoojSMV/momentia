@@ -18,7 +18,7 @@ This document describes the overall architecture of Momentia and how different p
         |                  |                  |
         |                  |                  |
    Authentication      Database          AI Services
-      (Supabase)      (Supabase)          (Claude)
+      (Supabase)      (Supabase)          (Gemini)
         |                  |                  |
         +------------------+------------------+
                            |
@@ -52,7 +52,7 @@ This document describes the overall architecture of Momentia and how different p
 
 ## AI
 
-- Claude API
+- Gemini API
 
 ## Hosting
 
@@ -264,7 +264,7 @@ AI
 
 ↓
 
-Claude API
+Gemini API
 
 Storage
 

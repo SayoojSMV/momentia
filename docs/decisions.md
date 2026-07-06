@@ -93,3 +93,29 @@ Use a personal Microsoft account for Azure App Registration.
 - Time saved to topics.time_spent_seconds on completion
 - Next topic link shown after completion (same unit, next order_index)
 - Content placeholder ready for future AI-generated study content
+
+## AI Chatbot
+- Floating button (bottom-right) added via layout.js so it appears on every page
+- Uses Gemini API (gemini-2.5-flash) with full subject/unit/topic context per user
+- Conversation built as a single prompt string rather than startChat history
+  (Gemini's strict history validation — must start with user role — made startChat unreliable)
+- File upload supported via paperclip button (sends filename as context)
+- No DB storage for chat history — resets on page refresh (intentional for now)
+
+## Friends & Chat
+- Users searchable by full_name via ilike query on profiles table
+- Required adding "Users can view all profiles for search" RLS policy on profiles
+  (original policy only allowed viewing own profile, blocking search entirely)
+- Friend requests: sender/receiver stored in friend_requests table with status field
+- Real-time chat uses Supabase postgres_changes subscription
+- Optimistic updates for sender (message added to state immediately on send)
+- Receiver gets message via real-time subscription filtered by sender_id
+- messages table indexed on sender_id and receiver_id for real-time filter support
+
+## Timetable Scheduler
+- Earliest-deadline-first scheduling — topics sorted by subject exam date
+- Scheduling logic is deterministic code, not AI (avoids LLM arithmetic errors)
+- schedule table stores one row per topic per day
+- Regenerates fully on each run (delete + reinsert)
+- Today panel on dashboard fetches schedule rows for current date only
+- Side quests excluded from scheduling (dashboard-only, no deadline pressure)
