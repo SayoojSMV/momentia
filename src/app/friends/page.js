@@ -168,6 +168,24 @@ export default function FriendsPage() {
         if (!error) setMessages(data)
     }
 
+    const handleRemoveFriend = async (friendId) => {
+        const confirmed = window.confirm('Remove this friend?')
+        if (!confirmed) return
+
+        await supabase
+            .from('friend_requests')
+            .delete()
+            .or(
+                `and(sender_id.eq.${user.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${user.id})`
+            )
+
+        setFriends((prev) => prev.filter((f) => f.id !== friendId))
+        if (selectedFriend?.id === friendId) {
+            setSelectedFriend(null)
+            setMessages([])
+        }
+    }
+
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !selectedFriend) return
 
@@ -306,12 +324,18 @@ export default function FriendsPage() {
                         ) : (
                             <>
                                 {/* Chat header */}
-                                <div className="border-b px-4 py-3">
+                                <div className="border-b px-4 py-3 flex items-center justify-between">
                                     <p className="font-medium text-sm">{selectedFriend.full_name}</p>
+                                    <button
+                                        onClick={() => handleRemoveFriend(selectedFriend.id)}
+                                        className="text-xs text-gray-400 hover:text-red-400"
+                                    >
+                                        Remove friend
+                                    </button>
                                 </div>
 
                                 {/* Messages */}
-                                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                <div className="overflow-y-auto p-4 space-y-3" style={{ height: '360px' }}>
                                     {messages.length === 0 && (
                                         <p className="text-gray-400 text-sm text-center">
                                             No messages yet — say hello!

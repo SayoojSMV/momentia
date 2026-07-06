@@ -291,3 +291,6 @@ alter publication supabase_realtime add table messages;
 --- ============ INDEXES ============
 create index if not exists messages_sender_id_idx on messages(sender_id);
 create index if not exists messages_receiver_id_idx on messages(receiver_id);
+
+--- ============ MIGRATIONS ============
+alter table topics add column content text;
