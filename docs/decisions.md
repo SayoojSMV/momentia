@@ -1,121 +1,86 @@
-# Design decisions log
+# Design Decisions Log
 
-## Naming & categories
-- Project name: Momentia
-- Subject categories: Academics (feeds AI timetable), Side Quests 
-  (dashboard-only, no scheduling), Test Prep (own category, no fixed deadlines)
+## Naming & Categories
+- Project name: Momentia (coined word, not a dictionary word)
+- Subject categories:
+  - Academics — feeds the AI timetable scheduler
+  - Side Quests — dashboard-only, no scheduling or deadlines
+  - Test Prep — standalone category for competitive exams
 
-## Roadmap structure
-- Subject → Units → Topics
-- Topic fields: name, minutes, difficulty, depends_on, source (from_materials/inferred)
-- AI roadmap generation uses Claude tool-use with a strict schema, not free-text JSON
+## Tech Stack
+- Frontend: Next.js (JavaScript, not TypeScript) + Tailwind CSS
+- Backend/Auth/DB/Storage: Supabase
+- AI: Google Gemini API (gemini-2.5-flash)
+  - Originally planned with Anthropic Claude API
+  - Switched to Gemini due to budget constraints
+  - The prompt and schema design is provider-agnostic
+- Hosting: Vercel
 
-## Timetable
-- Scheduling math (earliest-deadline-first) is deterministic code, not the AI
-- AI handles: priority judgment, natural-language session labels, chat-based adjustments
-- Recomputed on: topic completion, start of each day, deadline/subject changes
+## Database Architecture
+Six core tables: profiles, subjects, units, topics,
+topic_dependencies, materials.
+Row Level Security using auth.uid() ownership checks.
+Nested EXISTS subqueries for tables without a direct user_id column.
+supabase/schema.sql maintained as a complete, re-runnable source of truth.
 
-# Development Progress
-
-## 2026-06-27
-
-### Completed
-
-- Initialized Next.js project
-- Configured Tailwind CSS
-- Configured ESLint
-- Connected Supabase
-- Added environment configuration
-- Created shared Supabase client
-
-### Database
-
-Created tables:
-
-- profiles
-- subjects
-- units
-- topics
-- topic_dependencies
-- materials
-
-### Security
-
-Enabled Row Level Security (RLS)
-
-Created policies for:
-
-- Profiles
-- Subjects
-- Units
-- Topics
-- Topic Dependencies
-- Materials
-
-### Authentication
-
-Started Microsoft OAuth setup.
-
-Current blocker:
-
-University Microsoft account belongs to an Azure tenant where App Registration permissions are disabled.
-
-Decision:
-
-Use a personal Microsoft account for Azure App Registration.
-
-## 2026-06-30
-
-## Authentication
-- Google sign-in: fully implemented and working (issue #7)
-- Microsoft sign-in: blocked (issue #17) - persistent Azure tenant 
-  misrouting error (AADSTS50020/AADSTS16000), appears to be a 
-  Windows-level cached auth token issue, not fixable via account/browser 
-  changes alone. Deferred; not a blocker for the rest of the app.
+## Profile Auto-Creation
+handle_new_user() Postgres function with security definer
+auto-creates a profile row on signup via a database trigger.
+security definer bypasses the chicken-and-egg RLS problem
+(user has no session at the moment of creation).
 
 ## AI Roadmap Generation
-- Provider: Google Gemini API (gemini-2.5-flash model)
-- Switched from Anthropic Claude due to cost — Gemini has a free tier
-- Uses Gemini function calling (tool use) to guarantee structured JSON output
-- Roadmap schema: subject → units → topics (name, difficulty, minutes, order_index)
-- Files stored in Supabase Storage under materials bucket at path {user_id}/{subject_id}/{filename}
-- Storage policies: users can only read/upload/delete their own files
-- On regeneration: existing units and topics are deleted and replaced cleanly
-- API route: /api/generate-roadmap (server-side only, API key never exposed to browser)
+- Uses Gemini tool-use with a strict JSON schema (not free-text JSON)
+- Schema: subject → units → topics (name, difficulty, minutes, source)
+- source field distinguishes "from_materials" vs "inferred"
+- Regeneration preserves completed and in-progress topics by name match
+- Roadmap can be generated without materials using subject name as context
 
-## File Upload
-- Accepted types: pdf, pptx, docx, txt, png, jpg, jpeg
-- Metadata saved to materials table (file_name, storage_path, file_type)
-- Actual files stored in Supabase Storage (materials bucket)
+## Topic Content Generation
+- Generated once per topic on first visit via Gemini API
+- Saved to topics.content column permanently
+- Never regenerated after first save (content is stable)
+- Content length scaled by difficulty level
 
-## Topic Study Page
-- Live stopwatch timer starts on page load, stops on mark complete
-- Time saved to topics.time_spent_seconds on completion
-- Next topic link shown after completion (same unit, next order_index)
-- Content placeholder ready for future AI-generated study content
+## Timetable Scheduling
+- Earliest-deadline-first packing algorithm (deterministic code, not AI)
+- Gemini handles only priority judgment, not the scheduling math
+- Side Quests excluded from scheduling entirely
+- Schedule recomputes on topic completion or deadline change
 
-## AI Chatbot
-- Floating button (bottom-right) added via layout.js so it appears on every page
-- Uses Gemini API (gemini-2.5-flash) with full subject/unit/topic context per user
-- Conversation built as a single prompt string rather than startChat history
-  (Gemini's strict history validation — must start with user role — made startChat unreliable)
-- File upload supported via paperclip button (sends filename as context)
-- No DB storage for chat history — resets on page refresh (intentional for now)
+## Dashboard
+- Dashboard is the homepage (no separate welcome screen for logged-in users)
+- Public landing page (logged-out) is a future addition
+- Four stat tiles: Status, Current streak, Overall completion, Time spent
+- Today panel shows current day's scheduled topics
+
+## Chatbot
+- Floating button (bottom-right) in layout.js — appears on every page
+- Conversation built as a single prompt string (not startChat history)
+  Reason: Gemini's startChat requires strict user/model alternation
+  which caused reliability issues
+- No DB storage for chat history — resets on page refresh (intentional)
+- File upload supported (filename sent as context)
 
 ## Friends & Chat
 - Users searchable by full_name via ilike query on profiles table
-- Required adding "Users can view all profiles for search" RLS policy on profiles
-  (original policy only allowed viewing own profile, blocking search entirely)
-- Friend requests: sender/receiver stored in friend_requests table with status field
-- Real-time chat uses Supabase postgres_changes subscription
-- Optimistic updates for sender (message added to state immediately on send)
-- Receiver gets message via real-time subscription filtered by sender_id
-- messages table indexed on sender_id and receiver_id for real-time filter support
+- Required a "view all profiles" RLS policy addition for search to work
+- Real-time messaging via Supabase postgres_changes subscription
+- Optimistic updates for sent messages (added to state immediately)
+- messages table indexed on sender_id and receiver_id
 
-## Timetable Scheduler
-- Earliest-deadline-first scheduling — topics sorted by subject exam date
-- Scheduling logic is deterministic code, not AI (avoids LLM arithmetic errors)
-- schedule table stores one row per topic per day
-- Regenerates fully on each run (delete + reinsert)
-- Today panel on dashboard fetches schedule rows for current date only
-- Side quests excluded from scheduling (dashboard-only, no deadline pressure)
+## Authentication
+- Google sign-in: fully implemented and working (#7)
+- Microsoft sign-in: blocked (#17)
+  Persistent AADSTS50020/AADSTS16000 errors across all account types
+  and browsers. Suspected Windows-level Web Account Manager cache issue.
+  Deferred as post-deployment optional goal.
+- Apple sign-in: not yet attempted, requires Apple Developer account ($99/yr)
+
+## Deployment
+- Hosted on Vercel (auto-deploys from main branch)
+- Live URL: https://momentia-jooyas.vercel.app
+- Supabase URL Configuration updated with production URL
+- Vercel Authentication disabled (was causing double login)
+- Redirect URLs whitelisted: localhost:3000/** and
+  momentia-jooyas.vercel.app/**

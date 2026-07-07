@@ -1,134 +1,63 @@
 # Momentia
 
-> AI-powered study management platform that transforms study materials into personalized roadmaps and dynamically adapts study schedules based on student progress.
+A study-management web app for students — organize subjects, materials,
+and deadlines, and get AI-generated roadmaps and a dynamic timetable.
 
----
-
-## 🚀 Project Overview
-
-Momentia helps students organize their learning by automatically generating structured learning roadmaps from uploaded study materials and creating an intelligent timetable that updates as topics are completed.
-
-Unlike traditional timetable applications, Momentia continuously adapts the study schedule according to the student's actual progress.
-
----
-
-## ✨ Core Features
-
-### 📚 Academic Management
-- Subject management
-- AI-generated learning roadmaps
-- Unit and topic organization
-- Progress tracking
-
-### 🤖 AI Features
-- AI roadmap generation
-- AI chatbot assistant
-- Adaptive timetable generation
-- Intelligent study recommendations
-
-### 📅 Smart Timetable
-- Dynamic scheduling
-- Automatically updates after topic completion
-- Prioritizes upcoming exams
-- Study session recommendations
-
-### 👥 Collaboration
-- Friends / Study mates
-- Progress sharing
-- Chat (planned)
-
----
-
-## 🛠 Tech Stack
-
-### Frontend
-- Next.js
-- React
-- Tailwind CSS
-
-### Backend
-- Supabase
-
-### Database
-- PostgreSQL (Supabase)
-
-### Authentication
-- Google OAuth
-- Microsoft OAuth (In Progress)
-- Apple OAuth (Planned)
-
-### AI
-- Claude API (Planned)
-
-### Deployment
-- Vercel (Planned)
-
----
-
-## Current Development Status
-
-✅ Next.js project scaffold
-
-✅ Tailwind CSS setup
-
-✅ ESLint configuration
-
-✅ Supabase integration
-
-✅ Database schema
-
-✅ Row Level Security (RLS)
-
-🚧 Authentication
-
-⬜ Dashboard
-
-⬜ Subject Roadmap
-
-⬜ Study Page
-
-⬜ AI Roadmap Generator
-
-⬜ Dynamic Timetable
-
-⬜ Friends System
-
-⬜ AI Chatbot
-
----
-
-## Repository Structure
-src/
-app/
-lib/
-supabase/
-docs/
-public/
-
-
----
-
-## Contributors
-
-Currently maintained by:
-
-- Sayooj Simon
-
----
-
-## License
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+## Live App
+https://momentia-jooyas.vercel.app
 
 ## Status
-Core study flow complete. Timetable, friends/chat, and AI chatbot in progress.
+✅ Core feature set complete and deployed. Improvements in progress.
 
-## What's built so far
-- Google sign-in via Supabase Auth
-- Dashboard with stat tiles, subject cards, Add Subject modal
-- Subject page with units and topics (manual + AI generated)
-- AI roadmap generation from uploaded materials (Gemini API)
-- File upload to Supabase Storage
-- Topic study page with live timer and mark complete
+## Tech Stack
+- **Frontend**: Next.js 16 (JavaScript) + Tailwind CSS
+- **Backend/Auth/DB/Storage**: Supabase
+- **AI**: Google Gemini API (gemini-2.5-flash)
+- **Hosting**: Vercel
+
+## Features
+- Google OAuth sign-in
+- Add subjects under Academics, Side Quests, or Test Prep
+- Upload study materials (PDF, PPTX, DOCX, images)
+- AI-generated roadmap per subject (units → topics)
+- AI-generated study content per topic (saved permanently)
+- Live study timer with completion tracking
+- AI timetable scheduler (earliest-deadline-first)
+- Today panel on dashboard
+- Friends system with real-time chat
+- Persistent AI study assistant (context-aware, on every page)
+
+## Getting Started (Local Development)
+
+### Prerequisites
+- Node.js 18.18+
+- A Supabase project
+- A Google Cloud project with OAuth credentials
+- A Gemini API key
+
+### Setup
+1. Clone the repo
+   git clone https://github.com/SayoojSMV/momentia.git
+   cd momentia
+
+2. Install dependencies
+   npm install
+
+3. Create .env.local with your keys
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   GEMINI_API_KEY=your-gemini-key
+
+4. Run the database schema
+   Copy supabase/schema.sql into the Supabase SQL Editor and run it
+
+5. Start the dev server
+   npm run dev
+
+## Database Schema
+See supabase/schema.sql — a complete, re-runnable file that recreates
+all tables, RLS policies, and triggers from scratch.
+
+## Contributors
+- Sayooj Simon (@SayoojSMV)

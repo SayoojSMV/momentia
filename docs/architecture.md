@@ -1,278 +1,62 @@
 # Momentia Architecture
 
-This document describes the overall architecture of Momentia and how different parts of the application interact.
+## Overview
+Next.js app with Supabase for all backend concerns and Gemini for AI.
+No separate backend server — API routes in Next.js handle server-side logic.
 
----
-
-# 1. High Level Architecture
-
-```
-                +----------------------+
-                |      Browser         |
-                +----------+-----------+
-                           |
-                           |
-                    Next.js Frontend
-                           |
-        +------------------+------------------+
-        |                  |                  |
-        |                  |                  |
-   Authentication      Database          AI Services
-      (Supabase)      (Supabase)          (Gemini)
-        |                  |                  |
-        +------------------+------------------+
-                           |
-                    File Storage
-                  (Supabase Storage)
-```
-
----
-
-# 2. Technology Stack
-
-## Frontend
-
-- Next.js
-- React
-- Tailwind CSS
-
-## Backend
-
-- Supabase
-
-## Database
-
-- PostgreSQL
-
-## Authentication
-
-- Google OAuth
-- Microsoft OAuth
-- Apple OAuth (Planned)
-
-## AI
-
-- Gemini API
-
-## Hosting
-
-- Vercel
-
----
-
-# 3. Folder Structure
-
-```
+## Folder Structure
 src/
-│
-├── app/
-│
-├── components/
-│
-├── lib/
-│
-├── hooks/
-│
-├── services/
-│
-├── utils/
-│
-└── styles/
-```
-
-This structure will evolve as development progresses.
-
----
-
-# 4. Database Architecture
-
-Current tables:
-
-- profiles
-- subjects
-- units
-- topics
-- topic_dependencies
-- materials
-
-Relationships
-
-profiles
-    │
-    │
-subjects
-    │
-    │
-units
-    │
-    │
-topics
-    │
-topic_dependencies
-
-subjects
-    │
-materials
-
----
-
-# 5. Authentication Flow
-
-User
-
-↓
-
-Select Google / Microsoft Login
-
-↓
-
-Supabase Authentication
-
-↓
-
-OAuth Provider
-
-↓
-
-User Authenticated
-
-↓
-
-Create Profile (if first login)
-
-↓
-
-Dashboard
-
----
-
-# 6. Subject Learning Flow
-
-Dashboard
-
-↓
-
-Select Subject
-
-↓
-
-Roadmap
-
-↓
-
-Unit
-
-↓
-
-Topic
-
-↓
-
-Study Page
-
-↓
-
-Complete Topic
-
-↓
-
-Update Progress
-
-↓
-
-Regenerate Timetable
-
----
-
-# 7. AI Pipeline
-
-User uploads
-
-↓
-
-Study Materials
-
-↓
-
-Claude API
-
-↓
-
-Generate Roadmap
-
-↓
-
-Store in Database
-
-↓
-
-Generate Timetable
-
-↓
-
-Dashboard
-
----
-
-# 8. Planned Features
-
-Dashboard
-
-Subject Management
-
-Roadmap Viewer
-
-Study Page
-
-Dynamic Timetable
-
-AI Chatbot
-
-Friends
-
-Notifications
-
-Analytics
-
----
-
-# 9. Security
-
-- Row Level Security (RLS)
-- OAuth Authentication
-- Environment Variables
-- Protected Routes
-- Secure API Keys
-
----
-
-# 10. Deployment
-
-Frontend
-
-↓
-
-Vercel
-
-Backend
-
-↓
-
-Supabase
-
-AI
-
-↓
-
-Gemini API
-
-Storage
-
-↓
-
-Supabase Storage
-
----
-
-Last Updated:
-June 2026
+  app/
+    page.js                        ← Dashboard (homepage)
+    layout.js                      ← Root layout (Navbar, Chatbot)
+    login/page.js                  ← Google OAuth sign-in
+    auth/callback/page.js          ← OAuth callback handler
+    subject/[id]/page.js           ← Subject roadmap page
+    subject/[id]/topic/[topicId]/  ← Topic study page with timer
+    timetable/page.js              ← Full timetable view
+    friends/page.js                ← Friends and real-time chat
+    api/
+      generate-roadmap/route.js    ← Gemini roadmap generation
+      generate-content/route.js    ← Gemini topic content generation
+      chat/route.js                ← Gemini AI assistant
+      generate-schedule/route.js   ← Timetable scheduler
+  components/
+    Navbar.js                      ← Top navigation
+    Chatbot.js                     ← Floating AI assistant
+  lib/
+    supabase.js                    ← Shared Supabase client
+supabase/
+  schema.sql                       ← Complete database schema
+
+## Database Tables
+- profiles       — user data, streak, daily_study_minutes
+- subjects       — name, category, exam_date, user_id
+- units          — belong to subjects, ordered
+- topics         — belong to units, status, timer, content
+- topic_dependencies — prerequisite relationships between topics
+- materials      — file metadata for uploaded study materials
+
+## AI Pipeline
+1. User uploads materials to Supabase Storage
+2. Frontend sends subject name + material filenames to
+   /api/generate-roadmap
+3. Gemini generates units/topics via tool-use with strict schema
+4. Units and topics saved to Supabase
+5. On first topic visit, /api/generate-content generates study notes
+   and saves them permanently to topics.content
+6. /api/generate-schedule runs the timetable algorithm and stores
+   results in the schedule table
+
+## Auth Flow
+1. User clicks "Continue with Google" on /login
+2. Supabase redirects to Google OAuth
+3. Google redirects back to /auth/callback
+4. Supabase exchanges the code for a session
+5. handle_new_user() trigger auto-creates a profiles row
+6. User redirected to dashboard
+
+## Key Patterns
+- 'use client' on any component with event handlers or hooks
+- API routes for all AI calls (keys never exposed to browser)
+- RLS policies enforce data ownership at the database level
+- schema.sql is the single source of truth for the database
