@@ -1,8 +1,10 @@
 # Changelog
 
 ## v0.2.0 — Improvements (In Progress)
+### Completed
+- Real data on dashboard stat tiles and subject card completion (#28)
+
 ### Planned
-- Real data on dashboard stat tiles (#28)
 - Persist and resume topic timer (#29)
 - Compact timer with pause (#30)
 - Toggle mark-complete (#31)

@@ -39,7 +39,7 @@
 - [x] Live at https://momentia-jooyas.vercel.app
 
 ## Phase 7 — Improvements (In Progress)
-- [ ] Real data on dashboard stat tiles (#28)
+- [x] Real data on dashboard stat tiles (#28)
 - [ ] Persist and resume topic timer (#29)
 - [ ] Compact timer with pause (#30)
 - [ ] Toggle mark-complete (#31)
