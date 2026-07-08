@@ -18,6 +18,12 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false)
   const [newSubject, setNewSubject] = useState({ name: '', category: 'academics', exam_date: '' })
   const [todaySessions, setTodaySessions] = useState([])
+  const [stats, setStats] = useState({
+    status: 'On track',
+    streak: 0,
+    completion: 0,
+    timeSpent: '0 min',
+  })
   const router = useRouter()
 
   useEffect(() => {
@@ -51,6 +57,68 @@ export default function Dashboard() {
         .eq('scheduled_date', todayStr)
         .then(({ data, error }) => {
           if (!error) setTodaySessions(data)
+        })
+
+      // Fetch profile for streak
+      supabase
+        .from('profiles')
+        .select('current_streak')
+        .eq('id', session.user.id)
+        .single()
+        .then(({ data: profile }) => {
+          // Fetch all topics for completion + time spent
+          supabase
+            .from('topics')
+            .select('status, time_spent_seconds, units(subjects(user_id))')
+            .then(({ data: topics }) => {
+              if (!topics) return
+
+              // Filter to only this user's topics
+              const myTopics = topics.filter(
+                (t) => t.units?.subjects?.user_id === session.user.id
+              )
+
+              const total = myTopics.length
+              const completed = myTopics.filter((t) => t.status === 'completed').length
+              const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0
+
+              const totalSeconds = myTopics.reduce(
+                (sum, t) => sum + (t.time_spent_seconds || 0), 0
+              )
+              const hours = Math.floor(totalSeconds / 3600)
+              const minutes = Math.floor((totalSeconds % 3600) / 60)
+              const timeSpent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes} min`
+
+              setStats({
+                status: 'On track',
+                streak: profile?.current_streak || 0,
+                completion: completionPct,
+                timeSpent,
+              })
+            })
+        })
+
+      // Fetch topic completion per subject
+      supabase
+        .from('topics')
+        .select('status, units(subject_id)')
+        .then(({ data: allTopics }) => {
+          if (!allTopics) return
+          setSubjects((prev) =>
+            prev.map((subject) => {
+              const subjectTopics = allTopics.filter(
+                (t) => t.units?.subject_id === subject.id
+              )
+              const total = subjectTopics.length
+              const done = subjectTopics.filter(
+                (t) => t.status === 'completed'
+              ).length
+              return {
+                ...subject,
+                completion: total > 0 ? Math.round((done / total) * 100) : 0,
+              }
+            })
+          )
         })
     })
   }, [router])
@@ -97,12 +165,6 @@ export default function Dashboard() {
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
   const quote = motivationalQuotes[dayOfYear % motivationalQuotes.length]
 
-  const placeholderStats = {
-    status: 'On track',
-    streak: 4,
-    completion: 62,
-    timeSpent: '11h 20m',
-  }
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
@@ -118,10 +180,10 @@ export default function Dashboard() {
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatTile label="Status" value={placeholderStats.status} />
-        <StatTile label="Current streak" value={`${placeholderStats.streak} days`} />
-        <StatTile label="Overall completion" value={`${placeholderStats.completion}%`} />
-        <StatTile label="Time spent" value={placeholderStats.timeSpent} />
+        <StatTile label="Status" value={stats.status} />
+        <StatTile label="Current streak" value={`${stats.streak} days`} />
+        <StatTile label="Overall completion" value={`${stats.completion}%`} />
+        <StatTile label="Time spent" value={stats.timeSpent} />
       </div>
 
       {/* Today panel */}
@@ -267,11 +329,16 @@ function SubjectCard({ subject, onDelete }) {
         </button>
         <p className="text-xs text-gray-400 uppercase">{subject.category.replace('_', ' ')}</p>
         <p className="font-medium mt-1 pr-4">{subject.name}</p>
-        <div className="w-full bg-gray-100 rounded-full h-2 mt-3">
-          <div className="bg-black h-2 rounded-full" style={{ width: '0%' }} />
+        <div className="w-full bg-gray-100 rounded-full h-2 mt-3 mb-2">
+          <div
+            className="bg-black h-2 rounded-full"
+            style={{ width: `${subject.completion ?? 0}%` }}
+          />
         </div>
-        <p className="text-xs text-gray-400 mt-1">0% complete</p>
-      </div>
-    </Link>
+        <p className="text-xs text-gray-400">
+          {subject.completion ?? 0}% complete
+        </p>
+    </div>
+    </Link >
   )
 }
