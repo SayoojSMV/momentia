@@ -120,15 +120,40 @@ export default function TopicPage({ params }) {
     return () => clearInterval(intervalRef.current)
   }, [loading, completed])
 
-  // Save time spent when user leaves the page
+  // Save time to Supabase every 10 seconds and on page leave
   useEffect(() => {
-    return () => {
-      if (!topic) return
-      const totalSeconds = savedSecondsRef.current
-      supabase
+    if (!topic) return
+
+    const saveProgress = async () => {
+      await supabase
         .from('topics')
-        .update({ time_spent_seconds: totalSeconds })
+        .update({ time_spent_seconds: savedSecondsRef.current })
         .eq('id', topicId)
+    }
+
+    // Save every 10 seconds
+    const saveInterval = setInterval(saveProgress, 10000)
+
+    // Save when tab becomes hidden (user switches tabs or navigates away)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveProgress()
+      }
+    }
+
+    // Save on browser close/refresh
+    const handleBeforeUnload = () => {
+      saveProgress()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      clearInterval(saveInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      saveProgress() // also try on React unmount
     }
   }, [topic, topicId])
 
