@@ -3,9 +3,9 @@
 ## v0.2.0 — Improvements (In Progress)
 ### Completed
 - Real data on dashboard stat tiles and subject card completion (#28)
+- Persist and resume topic timer — saves every 10s, on tab switch, on browser close (#29)
 
 ### Planned
-- Persist and resume topic timer (#29)
 - Compact timer with pause (#30)
 - Toggle mark-complete (#31)
 - Collapsible sidebar navigation (#32)

@@ -40,7 +40,7 @@
 
 ## Phase 7 — Improvements (In Progress)
 - [x] Real data on dashboard stat tiles (#28)
-- [ ] Persist and resume topic timer (#29)
+- [x] Persist and resume topic timer (#29)
 - [ ] Compact timer with pause (#30)
 - [ ] Toggle mark-complete (#31)
 - [ ] Collapsible sidebar navigation (#32)
