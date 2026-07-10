@@ -5,9 +5,9 @@
 - Real data on dashboard stat tiles and subject card completion (#28)
 - Persist and resume topic timer — saves every 10s, on tab switch, on browser close (#29)
 - Compact timer with pause/resume button in topic header, fixed double content generation bug (#30)
+- Toggle mark-complete (#31)
 
 ### Planned
-- Toggle mark-complete (#31)
 - Collapsible sidebar navigation (#32)
 - User profile page (#33)
 - Message timestamps in chat (#34)
