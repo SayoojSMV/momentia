@@ -11,6 +11,7 @@ export default function TopicPage({ params }) {
   const [loading, setLoading] = useState(true)
   const [seconds, setSeconds] = useState(0)
   const [completed, setCompleted] = useState(false)
+  const [paused, setPaused] = useState(false)
   const [content, setContent] = useState(null)
   const [generatingContent, setGeneratingContent] = useState(false)
   const intervalRef = useRef(null)
@@ -24,7 +25,6 @@ export default function TopicPage({ params }) {
         return
       }
 
-      // Fetch this topic
       supabase
         .from('topics')
         .select('*')
@@ -41,39 +41,18 @@ export default function TopicPage({ params }) {
           setCompleted(data.status === 'completed')
           setLoading(false)
 
-          // Load existing content or generate it
+          // Load existing content, or generate with subject name context
           if (data.content) {
             setContent(data.content)
           } else {
-            setGeneratingContent(true)
-            fetch('/api/generate-content', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                topicId,
-                topicName: data.name,
-                subjectName: '', // will be fetched below
-                difficulty: data.difficulty,
-              }),
-            })
-              .then((r) => r.json())
-              .then((result) => {
-                if (result.content) setContent(result.content)
-                setGeneratingContent(false)
-              })
-          }
-
-          // Fetch subject name for content generation context
-          supabase
-            .from('units')
-            .select('subject_id, subjects(name)')
-            .eq('id', data.unit_id)
-            .single()
-            .then(({ data: unitData }) => {
-              if (!unitData) return
-              const subjectName = unitData.subjects?.name || ''
-
-              if (!data.content) {
+            // Fetch subject name first, then generate content once
+            supabase
+              .from('units')
+              .select('subject_id, subjects(name)')
+              .eq('id', data.unit_id)
+              .single()
+              .then(({ data: unitData }) => {
+                const subjectName = unitData?.subjects?.name || ''
                 setGeneratingContent(true)
                 fetch('/api/generate-content', {
                   method: 'POST',
@@ -90,10 +69,10 @@ export default function TopicPage({ params }) {
                     if (result.content) setContent(result.content)
                     setGeneratingContent(false)
                   })
-              }
-            })
+              })
+          }
 
-          // Find the next topic in the same unit
+          // Find next topic in same unit
           supabase
             .from('topics')
             .select('*')
@@ -109,16 +88,19 @@ export default function TopicPage({ params }) {
     })
   }, [topicId, router])
 
-  // Start the stopwatch when page loads, stop if already completed
+  // Start/stop timer based on paused and completed state
   useEffect(() => {
-    if (loading || completed) return
+    if (loading || completed || paused) {
+      clearInterval(intervalRef.current)
+      return
+    }
 
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => prev + 1)
     }, 1000)
 
     return () => clearInterval(intervalRef.current)
-  }, [loading, completed])
+  }, [loading, completed, paused])
 
   // Save time to Supabase every 10 seconds and on page leave
   useEffect(() => {
@@ -131,20 +113,13 @@ export default function TopicPage({ params }) {
         .eq('id', topicId)
     }
 
-    // Save every 10 seconds
     const saveInterval = setInterval(saveProgress, 10000)
 
-    // Save when tab becomes hidden (user switches tabs or navigates away)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        saveProgress()
-      }
+      if (document.visibilityState === 'hidden') saveProgress()
     }
 
-    // Save on browser close/refresh
-    const handleBeforeUnload = () => {
-      saveProgress()
-    }
+    const handleBeforeUnload = () => saveProgress()
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('beforeunload', handleBeforeUnload)
@@ -153,18 +128,17 @@ export default function TopicPage({ params }) {
       clearInterval(saveInterval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', handleBeforeUnload)
-      saveProgress() // also try on React unmount
+      saveProgress()
     }
   }, [topic, topicId])
 
-  // Keep savedSecondsRef in sync with the live timer
+  // Keep savedSecondsRef in sync with live timer
   useEffect(() => {
     savedSecondsRef.current = seconds
   }, [seconds])
 
   const handleMarkComplete = async () => {
     clearInterval(intervalRef.current)
-
     await supabase
       .from('topics')
       .update({
@@ -172,7 +146,6 @@ export default function TopicPage({ params }) {
         time_spent_seconds: seconds,
       })
       .eq('id', topicId)
-
     setCompleted(true)
   }
 
@@ -197,29 +170,45 @@ export default function TopicPage({ params }) {
         ← Back to subject
       </button>
 
-      {/* Topic header */}
-      <div className="mb-6">
-        <span className={`text-xs px-2 py-1 rounded-full ${topic.difficulty === 'easy' ? 'bg-gray-100 text-gray-500' :
-          topic.difficulty === 'medium' ? 'bg-gray-200 text-gray-600' :
+      {/* Topic header with compact timer */}
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex-1">
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            topic.difficulty === 'easy' ? 'bg-gray-100 text-gray-500' :
+            topic.difficulty === 'medium' ? 'bg-gray-200 text-gray-600' :
             'bg-gray-800 text-white'
           }`}>
-          {topic.difficulty}
-        </span>
-        <h1 className="text-2xl font-semibold mt-2">{topic.name}</h1>
-      </div>
+            {topic.difficulty}
+          </span>
+          <h1 className="text-2xl font-semibold mt-2">{topic.name}</h1>
+        </div>
 
-      {/* Timer */}
-      <div className="bg-white border rounded-lg p-6 mb-6 text-center">
-        <p className="text-xs text-gray-400 mb-1">
-          {completed ? 'Time spent' : 'Time studying'}
-        </p>
-        <p className="text-4xl font-mono font-semibold">{formatTime(seconds)}</p>
-        {!completed && (
-          <p className="text-xs text-gray-400 mt-2">Timer running...</p>
-        )}
-        {completed && (
-          <p className="text-xs text-green-600 mt-2">✓ Completed</p>
-        )}
+        {/* Compact timer */}
+        <div className="flex flex-col items-end gap-2 ml-4 flex-shrink-0">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+            completed ? 'bg-white' : paused ? 'bg-yellow-50 border-yellow-200' : 'bg-white'
+          }`}>
+            <span className="font-mono text-lg font-semibold">
+              {formatTime(seconds)}
+            </span>
+            {completed ? (
+              <span className="text-xs text-green-600">✓</span>
+            ) : (
+              <button
+                onClick={() => setPaused((prev) => !prev)}
+                className="text-xs text-gray-400 hover:text-gray-700 ml-1"
+                title={paused ? 'Resume timer' : 'Pause timer'}
+              >
+                {paused ? '▶' : '⏸'}
+              </button>
+            )}
+          </div>
+          {!completed && (
+            <p className="text-xs text-gray-400">
+              {paused ? 'Paused' : 'Timer running'}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Content */}
