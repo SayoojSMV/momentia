@@ -6,9 +6,9 @@
 - Persist and resume topic timer — saves every 10s, on tab switch, on browser close (#29)
 - Compact timer with pause/resume button in topic header, fixed double content generation bug (#30)
 - Toggle mark-complete (#31)
+- Collapsible sidebar navigation (#32)
 
 ### Planned
-- Collapsible sidebar navigation (#32)
 - User profile page (#33)
 - Message timestamps in chat (#34)
 - Unread message notification dot (#35)

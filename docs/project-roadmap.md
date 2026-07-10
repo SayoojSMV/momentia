@@ -43,7 +43,7 @@
 - [x] Persist and resume topic timer (#29)
 - [x] Compact timer with pause (#30)
 - [x] Toggle mark-complete (#31)
-- [ ] Collapsible sidebar navigation (#32)
+- [x] Collapsible sidebar navigation (#32)
 - [ ] User profile page (#33)
 - [ ] Message timestamps in chat (#34)
 - [ ] Unread message notification dot (#35)
