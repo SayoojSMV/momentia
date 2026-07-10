@@ -21,7 +21,7 @@ src/
       chat/route.js                ← Gemini AI assistant
       generate-schedule/route.js   ← Timetable scheduler
   components/
-    Navbar.js                      ← Top navigation
+    Sidebar.js                     ← Top navigation
     Chatbot.js                     ← Floating AI assistant
   lib/
     supabase.js                    ← Shared Supabase client
