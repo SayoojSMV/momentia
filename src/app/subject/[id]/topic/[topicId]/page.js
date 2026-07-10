@@ -149,6 +149,15 @@ export default function TopicPage({ params }) {
     setCompleted(true)
   }
 
+  const handleMarkIncomplete = async () => {
+    await supabase
+      .from('topics')
+      .update({ status: 'not_started' })
+      .eq('id', topicId)
+    setCompleted(false)
+    setPaused(false)
+  }
+
   const formatTime = (s) => {
     const h = Math.floor(s / 3600)
     const m = Math.floor((s % 3600) / 60)
@@ -173,11 +182,10 @@ export default function TopicPage({ params }) {
       {/* Topic header with compact timer */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex-1">
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            topic.difficulty === 'easy' ? 'bg-gray-100 text-gray-500' :
+          <span className={`text-xs px-2 py-1 rounded-full ${topic.difficulty === 'easy' ? 'bg-gray-100 text-gray-500' :
             topic.difficulty === 'medium' ? 'bg-gray-200 text-gray-600' :
-            'bg-gray-800 text-white'
-          }`}>
+              'bg-gray-800 text-white'
+            }`}>
             {topic.difficulty}
           </span>
           <h1 className="text-2xl font-semibold mt-2">{topic.name}</h1>
@@ -185,9 +193,8 @@ export default function TopicPage({ params }) {
 
         {/* Compact timer */}
         <div className="flex flex-col items-end gap-2 ml-4 flex-shrink-0">
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
-            completed ? 'bg-white' : paused ? 'bg-yellow-50 border-yellow-200' : 'bg-white'
-          }`}>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${completed ? 'bg-white' : paused ? 'bg-yellow-50 border-yellow-200' : 'bg-white'
+            }`}>
             <span className="font-mono text-lg font-semibold">
               {formatTime(seconds)}
             </span>
@@ -236,6 +243,12 @@ export default function TopicPage({ params }) {
           <div className="w-full bg-gray-100 text-gray-500 py-3 rounded-lg text-sm font-medium text-center">
             ✓ Topic completed
           </div>
+          <button
+            onClick={handleMarkIncomplete}
+            className="w-full border border-gray-300 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+          >
+            Mark as incomplete
+          </button>
           {nextTopic ? (
             <button
               onClick={() => router.push(`/subject/${id}/topic/${nextTopic.id}`)}
