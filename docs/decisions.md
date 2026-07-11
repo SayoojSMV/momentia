@@ -84,3 +84,21 @@ security definer bypasses the chicken-and-egg RLS problem
 - Vercel Authentication disabled (was causing double login)
 - Redirect URLs whitelisted: localhost:3000/** and
   momentia-jooyas.vercel.app/**
+
+## Sidebar Navigation
+- Replaced top horizontal navbar with a collapsible left icon sidebar
+- Collapsed state: 56px wide, icons only
+- Expanded state: 224px wide, icons + labels, triggered by hamburger click
+- Collapses on outside click or nav link click via invisible overlay div
+- Subjects section lists all user subjects with direct links
+- Hidden on login and auth callback pages via pathname check
+- Renamed Navbar.js to Sidebar.js
+
+## Profile Page
+- Avatar stored in Supabase Storage 'avatars' bucket (public bucket)
+- Avatar path: {user_id}/avatar_{timestamp}.{ext}
+- Username stored in profiles.username (unique constraint)
+- Real-time availability check on every keystroke using .limit(1) query
+- Save button disabled while status is 'checking' or 'taken'
+- Activity calendar shows last 15 weeks, colored by time_spent_seconds per day
+- Stats calculated live from subjects/units/topics tables

@@ -7,9 +7,9 @@
 - Compact timer with pause/resume button in topic header, fixed double content generation bug (#30)
 - Toggle mark-complete (#31)
 - Collapsible sidebar navigation (#32)
+- User profile page (#33)
 
 ### Planned
-- User profile page (#33)
 - Message timestamps in chat (#34)
 - Unread message notification dot (#35)
 - Live friend name suggestions (#36)

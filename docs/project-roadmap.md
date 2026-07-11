@@ -44,7 +44,7 @@
 - [x] Compact timer with pause (#30)
 - [x] Toggle mark-complete (#31)
 - [x] Collapsible sidebar navigation (#32)
-- [ ] User profile page (#33)
+- [x] User profile page (#33)
 - [ ] Message timestamps in chat (#34)
 - [ ] Unread message notification dot (#35)
 - [ ] Live friend name suggestions (#36)
