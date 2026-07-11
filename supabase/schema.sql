@@ -294,3 +294,32 @@ create index if not exists messages_receiver_id_idx on messages(receiver_id);
 
 --- ============ MIGRATIONS ============
 alter table topics add column content text;
+
+--- Add username column to profiles table
+alter table profiles add column username text unique;
+
+--- ============ AVATAR STORAGE POLICIES ============
+create policy "Users can upload own avatar"
+on storage.objects for insert
+with check (
+  bucket_id = 'avatars' and
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+create policy "Users can update own avatar"
+on storage.objects for update
+using (
+  bucket_id = 'avatars' and
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+create policy "Anyone can view avatars"
+on storage.objects for select
+using (bucket_id = 'avatars');
+
+create policy "Users can delete own avatar"
+on storage.objects for delete
+using (
+  bucket_id = 'avatars' and
+  auth.uid()::text = (storage.foldername(name))[1]
+);
