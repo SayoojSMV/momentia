@@ -344,7 +344,7 @@ export default function FriendsPage() {
                                     {messages.map((msg) => (
                                         <div
                                             key={msg.id}
-                                            className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
+                                            className={`flex flex-col ${msg.sender_id === user.id ? 'items-end' : 'items-start'}`}
                                         >
                                             <div
                                                 className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.sender_id === user.id
@@ -354,6 +354,13 @@ export default function FriendsPage() {
                                             >
                                                 {msg.content}
                                             </div>
+                                            <p className="text-xs text-gray-400 mt-0.5 px-1">
+                                                {new Date(msg.created_at).toLocaleTimeString('en-IN', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: true,
+                                                })}
+                                            </p>
                                         </div>
                                     ))}
                                     <div ref={messagesEndRef} />
