@@ -18,6 +18,7 @@ export default function Sidebar() {
   const [subjects, setSubjects] = useState([])
   const [showSubjects, setShowSubjects] = useState(false)
   const [user, setUser] = useState(null)
+  const [hasUnread, setHasUnread] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -33,6 +34,17 @@ export default function Sidebar() {
         .order('created_at', { ascending: true })
         .then(({ data }) => {
           if (data) setSubjects(data)
+        })
+
+      // Check for unread messages
+      supabase
+        .from('messages')
+        .select('id')
+        .eq('receiver_id', session.user.id)
+        .eq('is_read', false)
+        .limit(1)
+        .then(({ data }) => {
+          setHasUnread(data?.length > 0)
         })
     })
   }, [])
@@ -66,6 +78,7 @@ export default function Sidebar() {
         <nav className="flex-1 overflow-y-auto py-2">
           {navItems.map((item) => {
             const active = pathname === item.href
+            const showDot = item.href === '/friends' && hasUnread
             return (
               <Link
                 key={item.href}
@@ -75,7 +88,12 @@ export default function Sidebar() {
                   }`}
                 title={!expanded ? item.label : undefined}
               >
-                <span className="text-base flex-shrink-0">{item.icon}</span>
+                <span className="text-base flex-shrink-0 relative">
+                  {item.icon}
+                  {showDot && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                  )}
+                </span>
                 {expanded && <span className="truncate">{item.label}</span>}
               </Link>
             )

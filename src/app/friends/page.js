@@ -15,6 +15,7 @@ export default function FriendsPage() {
     const [selectedFriend, setSelectedFriend] = useState(null)
     const [messages, setMessages] = useState([])
     const [newMessage, setNewMessage] = useState('')
+    const [unreadCounts, setUnreadCounts] = useState({})
     const messagesEndRef = useRef(null)
     const router = useRouter()
 
@@ -27,6 +28,7 @@ export default function FriendsPage() {
             setUser(session.user)
             fetchFriends(session.user.id)
             fetchPendingRequests(session.user.id)
+            fetchUnreadCounts(session.user.id)
             setLoading(false)
         })
     }, [router])
@@ -52,9 +54,13 @@ export default function FriendsPage() {
                 },
                 (payload) => {
                     const msg = payload.new
-                    // Only add if this message is part of this conversation
                     if (msg.receiver_id === user.id) {
                         setMessages((prev) => [...prev, msg])
+                        // Mark as read immediately since this friend is selected
+                        supabase
+                            .from('messages')
+                            .update({ is_read: true })
+                            .eq('id', msg.id)
                     }
                 }
             )
@@ -113,6 +119,22 @@ export default function FriendsPage() {
         }
     }
 
+    const fetchUnreadCounts = async (userId) => {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('sender_id')
+            .eq('receiver_id', userId)
+            .eq('is_read', false)
+
+        if (error || !data) return
+
+        const counts = {}
+        data.forEach((msg) => {
+            counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1
+        })
+        setUnreadCounts(counts)
+    }
+
     const handleSearch = async () => {
         if (!searchQuery.trim()) return
         setSearching(true)
@@ -156,6 +178,21 @@ export default function FriendsPage() {
 
     const handleSelectFriend = async (friend) => {
         setSelectedFriend(friend)
+
+        // Mark all messages from this friend as read
+        await supabase
+            .from('messages')
+            .update({ is_read: true })
+            .eq('receiver_id', user.id)
+            .eq('sender_id', friend.id)
+            .eq('is_read', false)
+
+        // Clear unread count for this friend
+        setUnreadCounts((prev) => {
+            const updated = { ...prev }
+            delete updated[friend.id]
+            return updated
+        })
 
         const { data, error } = await supabase
             .from('messages')
@@ -301,10 +338,20 @@ export default function FriendsPage() {
                                         className={`flex items-center gap-3 py-2 px-2 rounded cursor-pointer hover:bg-gray-50 ${selectedFriend?.id === friend.id ? 'bg-gray-100' : ''
                                             }`}
                                     >
-                                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
-                                            {friend.full_name?.[0] || '?'}
+                                        <div className="relative">
+                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+                                                {friend.full_name?.[0] || '?'}
+                                            </div>
+                                            {unreadCounts[friend.id] > 0 && (
+                                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                                                    {unreadCounts[friend.id] > 9 ? '9+' : unreadCounts[friend.id]}
+                                                </span>
+                                            )}
                                         </div>
-                                        <p className="text-sm">{friend.full_name}</p>
+                                        <p className="text-sm flex-1">{friend.full_name}</p>
+                                        {unreadCounts[friend.id] > 0 && (
+                                            <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                                        )}
                                     </div>
                                 ))}
                             </div>
