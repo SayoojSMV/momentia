@@ -9,9 +9,10 @@
 - Collapsible sidebar navigation (#32)
 - User profile page (#33)
 - Message timestamps in chat (#34)
+- Unread message notification dot (#35)
+
 
 ### Planned
-- Unread message notification dot (#35)
 - Live friend name suggestions (#36)
 - Friend suggestions for new users (#37)
 - Topic search within subject (#38)
