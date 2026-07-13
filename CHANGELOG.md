@@ -8,6 +8,8 @@
 - Toggle mark-complete (#31)
 - Collapsible sidebar navigation (#32)
 - User profile page (#33)
+- Message timestamps in chat (#34)
+- Unread message notification dot (#35)
 
 
 ### Planned
