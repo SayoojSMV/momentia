@@ -150,6 +150,22 @@ export default function FriendsPage() {
         setSearching(false)
     }
 
+    const handleLiveSearch = async (value) => {
+        if (!value.trim()) {
+            setSearchResults([])
+            return
+        }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .ilike('full_name', `%${value.trim()}%`)
+            .neq('id', user.id)
+            .limit(5)
+
+        if (!error) setSearchResults(data)
+    }
+
     const handleSendRequest = async (receiverId) => {
         await supabase.from('friend_requests').insert({
             sender_id: user.id,
@@ -262,7 +278,10 @@ export default function FriendsPage() {
                             <input
                                 type="text"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value)
+                                    handleLiveSearch(e.target.value)
+                                }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                 placeholder="Search by name"
                                 className="flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
