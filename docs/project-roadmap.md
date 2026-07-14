@@ -48,7 +48,7 @@
 - [x] Message timestamps in chat (#34)
 - [x] Unread message notification dot (#35)
 - [x] Live friend name suggestions (#36)
-- [ ] Friend suggestions for new users (#37)
+- [x] Friend suggestions for new users (#37)
 - [ ] Topic search within subject (#38)
 
 ## Future Goals
