@@ -16,6 +16,7 @@ export default function FriendsPage() {
     const [messages, setMessages] = useState([])
     const [newMessage, setNewMessage] = useState('')
     const [unreadCounts, setUnreadCounts] = useState({})
+    const [suggestions, setSuggestions] = useState([])
     const messagesEndRef = useRef(null)
     const router = useRouter()
 
@@ -29,6 +30,7 @@ export default function FriendsPage() {
             fetchFriends(session.user.id)
             fetchPendingRequests(session.user.id)
             fetchUnreadCounts(session.user.id)
+            fetchSuggestions(session.user.id)
             setLoading(false)
         })
     }, [router])
@@ -133,6 +135,29 @@ export default function FriendsPage() {
             counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1
         })
         setUnreadCounts(counts)
+    }
+
+    const fetchSuggestions = async (userId) => {
+        // Get existing friend IDs and pending request IDs to exclude them
+        const { data: requests } = await supabase
+            .from('friend_requests')
+            .select('sender_id, receiver_id')
+            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+
+        const excludeIds = new Set([userId])
+            ; (requests || []).forEach((r) => {
+                excludeIds.add(r.sender_id)
+                excludeIds.add(r.receiver_id)
+            })
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .not('id', 'in', `(${[...excludeIds].join(',')})`)
+            .order('created_at', { ascending: false })
+            .limit(5)
+
+        if (!error && data) setSuggestions(data)
     }
 
     const handleSearch = async () => {
@@ -347,7 +372,50 @@ export default function FriendsPage() {
                     <div className="bg-white border rounded-lg p-4">
                         <p className="text-sm font-medium mb-3">Study mates</p>
                         {friends.length === 0 ? (
-                            <p className="text-gray-400 text-sm">No friends yet — search above.</p>
+                            <div>
+                                <p className="text-gray-400 text-sm mb-3">No friends yet — search above.</p>
+                                {suggestions.length > 0 && (
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                                            Suggested
+                                        </p>
+                                        <div className="space-y-2">
+                                            {suggestions.map((profile) => (
+                                                <div
+                                                    key={profile.id}
+                                                    className="flex items-center justify-between py-1"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                                                            {profile.avatar_url ? (
+                                                                <img
+                                                                    src={profile.avatar_url}
+                                                                    alt={profile.full_name}
+                                                                    className="w-full h-full rounded-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                profile.full_name?.[0] || '?'
+                                                            )}
+                                                        </div>
+                                                        <p className="text-sm">{profile.full_name}</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            handleSendRequest(profile.id)
+                                                            setSuggestions((prev) =>
+                                                                prev.filter((s) => s.id !== profile.id)
+                                                            )
+                                                        }}
+                                                        className="text-xs border rounded px-2 py-1 hover:bg-gray-50"
+                                                    >
+                                                        Add
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         ) : (
                             <div className="space-y-2">
                                 {friends.map((friend) => (
