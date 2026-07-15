@@ -255,6 +255,7 @@ create table messages (
   receiver_id uuid references auth.users on delete cascade not null,
   content text not null,
   created_at timestamp with time zone default now()
+  is_read boolean default false,
 );
 
 alter table friend_requests enable row level security;
@@ -323,3 +324,5 @@ using (
   bucket_id = 'avatars' and
   auth.uid()::text = (storage.foldername(name))[1]
 );
+
+
