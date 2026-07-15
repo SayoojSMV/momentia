@@ -35,19 +35,47 @@ export default function Sidebar() {
         .then(({ data }) => {
           if (data) setSubjects(data)
         })
-
-      // Check for unread messages
-      supabase
-        .from('messages')
-        .select('id')
-        .eq('receiver_id', session.user.id)
-        .eq('is_read', false)
-        .limit(1)
-        .then(({ data }) => {
-          setHasUnread(data?.length > 0)
-        })
     })
   }, [])
+
+  // Check for unread messages
+  useEffect(() => {
+    if (!user) return
+
+    const checkUnread = async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('receiver_id', user.id)
+        .eq('is_read', false)
+        .limit(1)
+
+      setHasUnread(data?.length > 0)
+    }
+
+    // Initial check
+    checkUnread()
+
+    // Listen for any message changes (new messages or read status updates)
+    const channel = supabase
+      .channel(`sidebar-unread-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => {
+          // Re-check unread count whenever any message changes
+          checkUnread()
+        }
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [user])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
