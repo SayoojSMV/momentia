@@ -22,6 +22,7 @@ export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
 
+  // Fetch user and subjects on mount
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
@@ -35,34 +36,58 @@ export default function Sidebar() {
         .then(({ data }) => {
           if (data) setSubjects(data)
         })
-
-      // Check for unread messages
-      supabase
-        .from('messages')
-        .select('id')
-        .eq('receiver_id', session.user.id)
-        .eq('is_read', false)
-        .limit(1)
-        .then(({ data }) => {
-          setHasUnread(data?.length > 0)
-        })
     })
   }, [])
+
+  // Separate effect for unread messages — runs when user or pathname changes
+  useEffect(() => {
+    if (!user) return
+
+    const checkUnread = async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('receiver_id', user.id)
+        .eq('is_read', false)
+        .limit(1)
+
+      setHasUnread(data?.length > 0)
+    }
+
+    checkUnread()
+
+    // Real-time subscription — fires on any message change for this user
+    const channel = supabase
+      .channel(`sidebar-unread-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => checkUnread()
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [user, pathname])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.replace('/login')
   }
 
-  // Don't show sidebar on login/auth pages
   if (pathname === '/login' || pathname?.startsWith('/auth')) return null
 
   return (
     <>
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-14'
-          }`}
+        className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${
+          expanded ? 'w-56' : 'w-14'
+        }`}
       >
         {/* Hamburger */}
         <button
@@ -84,8 +109,9 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setExpanded(false)}
-                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 ${active ? 'text-black font-medium bg-gray-50' : 'text-gray-500'
-                  }`}
+                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 ${
+                  active ? 'text-black font-medium bg-gray-50' : 'text-gray-500'
+                }`}
                 title={!expanded ? item.label : undefined}
               >
                 <span className="text-base flex-shrink-0 relative">
@@ -120,10 +146,11 @@ export default function Sidebar() {
                         key={subject.id}
                         href={`/subject/${subject.id}`}
                         onClick={() => setExpanded(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 ${pathname === `/subject/${subject.id}`
-                          ? 'text-black font-medium'
-                          : 'text-gray-500'
-                          }`}
+                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 ${
+                          pathname === `/subject/${subject.id}`
+                            ? 'text-black font-medium'
+                            : 'text-gray-500'
+                        }`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
                         <span className="truncate">{subject.name}</span>
@@ -160,7 +187,7 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Overlay when expanded on small screens */}
+      {/* Overlay */}
       {expanded && (
         <div
           className="fixed inset-0 z-20"
@@ -168,7 +195,7 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Spacer so page content doesn't go under the sidebar */}
+      {/* Spacer */}
       <div className="w-14 flex-shrink-0" />
     </>
   )
