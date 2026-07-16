@@ -39,7 +39,7 @@ export default function Sidebar() {
     })
   }, [])
 
-  // Separate effect for unread messages — runs when user or pathname changes
+  // Check for unread messages
   useEffect(() => {
     if (!user) return
 
@@ -54,9 +54,10 @@ export default function Sidebar() {
       setHasUnread(data?.length > 0)
     }
 
+    // Initial check
     checkUnread()
 
-    // Real-time subscription — fires on any message change for this user
+    // Listen for any message changes (new messages or read status updates)
     const channel = supabase
       .channel(`sidebar-unread-${user.id}`)
       .on(
@@ -67,12 +68,15 @@ export default function Sidebar() {
           table: 'messages',
           filter: `receiver_id=eq.${user.id}`,
         },
-        () => checkUnread()
+        () => {
+          // Re-check unread count whenever any message changes
+          checkUnread()
+        }
       )
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [user, pathname])
+  }, [user])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
