@@ -22,7 +22,6 @@ export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
 
-  // Fetch user and subjects on mount
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
@@ -39,7 +38,6 @@ export default function Sidebar() {
     })
   }, [])
 
-  // Separate effect for unread messages — runs when user or pathname changes
   useEffect(() => {
     if (!user) return
 
@@ -54,24 +52,13 @@ export default function Sidebar() {
       setHasUnread(data?.length > 0)
     }
 
-    checkUnread()
-
-    // Real-time subscription — fires on any message change for this user
-    const channel = supabase
-      .channel(`sidebar-unread-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`,
-        },
-        () => checkUnread()
-      )
-      .subscribe()
-
-    return () => supabase.removeChannel(channel)
+    if (pathname === '/friends') {
+      // Delay check on friends page to allow mark-as-read to complete first
+      const timer = setTimeout(checkUnread, 1500)
+      return () => clearTimeout(timer)
+    } else {
+      checkUnread()
+    }
   }, [user, pathname])
 
   const handleSignOut = async () => {
@@ -83,13 +70,11 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${
           expanded ? 'w-56' : 'w-14'
         }`}
       >
-        {/* Hamburger */}
         <button
           onClick={() => setExpanded((prev) => !prev)}
           className="h-14 flex items-center text-gray-500 hover:text-gray-800 flex-shrink-0 border-b w-full px-4 gap-3"
@@ -99,7 +84,6 @@ export default function Sidebar() {
           {expanded && <span className="text-sm font-semibold">Momentia</span>}
         </button>
 
-        {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-2">
           {navItems.map((item) => {
             const active = pathname === item.href
@@ -125,7 +109,6 @@ export default function Sidebar() {
             )
           })}
 
-          {/* Subjects section */}
           {expanded && (
             <div className="mt-2">
               <button
@@ -162,7 +145,6 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* Subjects icon when collapsed */}
           {!expanded && (
             <button
               className="flex items-center justify-center w-full h-11 text-gray-500 hover:bg-gray-50"
@@ -174,7 +156,6 @@ export default function Sidebar() {
           )}
         </nav>
 
-        {/* Sign out at bottom */}
         <div className="border-t py-2">
           <button
             onClick={handleSignOut}
@@ -187,7 +168,6 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Overlay */}
       {expanded && (
         <div
           className="fixed inset-0 z-20"
@@ -195,7 +175,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Spacer */}
       <div className="w-14 flex-shrink-0" />
     </>
   )

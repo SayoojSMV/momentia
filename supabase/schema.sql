@@ -323,3 +323,10 @@ using (
   bucket_id = 'avatars' and
   auth.uid()::text = (storage.foldername(name))[1]
 );
+
+--- ============ MESSAGE READ STATUS ============
+create policy "Users can mark received messages as read"
+on messages
+for update
+using (auth.uid() = receiver_id)
+with check (auth.uid() = receiver_id);

@@ -35,12 +35,10 @@ export default function FriendsPage() {
         })
     }, [router])
 
-    // Scroll to bottom when messages change
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
 
-    // Real-time subscription — only listen for INCOMING messages
     useEffect(() => {
         if (!user || !selectedFriend) return
 
@@ -58,7 +56,6 @@ export default function FriendsPage() {
                     const msg = payload.new
                     if (msg.receiver_id === user.id) {
                         setMessages((prev) => [...prev, msg])
-                        // Mark as read immediately since this friend is selected
                         supabase
                             .from('messages')
                             .update({ is_read: true })
@@ -80,7 +77,6 @@ export default function FriendsPage() {
 
         if (error || !data) return
 
-        // Get the other person's ID for each friendship
         const friendIds = data.map((r) =>
             r.sender_id === userId ? r.receiver_id : r.sender_id
         )
@@ -138,7 +134,6 @@ export default function FriendsPage() {
     }
 
     const fetchSuggestions = async (userId) => {
-        // Get existing friend IDs and pending request IDs to exclude them
         const { data: requests } = await supabase
             .from('friend_requests')
             .select('sender_id, receiver_id')
@@ -221,14 +216,16 @@ export default function FriendsPage() {
         setSelectedFriend(friend)
 
         // Mark all messages from this friend as read
-        await supabase
+        const { error: markError } = await supabase
             .from('messages')
             .update({ is_read: true })
             .eq('receiver_id', user.id)
             .eq('sender_id', friend.id)
             .eq('is_read', false)
 
-        // Clear unread count for this friend
+        console.log('[Friends] mark as read error:', markError)
+
+        // Clear unread count for this friend in local state
         setUnreadCounts((prev) => {
             const updated = { ...prev }
             delete updated[friend.id]
@@ -242,6 +239,8 @@ export default function FriendsPage() {
                 `and(sender_id.eq.${user.id},receiver_id.eq.${friend.id}),and(sender_id.eq.${friend.id},receiver_id.eq.${user.id})`
             )
             .order('created_at', { ascending: true })
+
+        console.log('[Friends] fetched messages error:', error)
 
         if (!error) setMessages(data)
     }
@@ -280,7 +279,6 @@ export default function FriendsPage() {
             .select()
             .single()
 
-        // Add your own message to state immediately (optimistic update)
         if (!error && data) {
             setMessages((prev) => [...prev, data])
         }
@@ -293,10 +291,7 @@ export default function FriendsPage() {
             <h1 className="text-2xl font-semibold mb-6">Friends</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left panel — friends list + search */}
                 <div className="space-y-4">
-
-                    {/* Search */}
                     <div className="bg-white border rounded-lg p-4">
                         <p className="text-sm font-medium mb-3">Find study mates</p>
                         <div className="flex gap-2">
@@ -340,7 +335,6 @@ export default function FriendsPage() {
                         )}
                     </div>
 
-                    {/* Pending requests */}
                     {pendingReceived.length > 0 && (
                         <div className="bg-white border rounded-lg p-4">
                             <p className="text-sm font-medium mb-3">Friend requests</p>
@@ -368,7 +362,6 @@ export default function FriendsPage() {
                         </div>
                     )}
 
-                    {/* Friends list */}
                     <div className="bg-white border rounded-lg p-4">
                         <p className="text-sm font-medium mb-3">Study mates</p>
                         {friends.length === 0 ? (
@@ -422,8 +415,9 @@ export default function FriendsPage() {
                                     <div
                                         key={friend.id}
                                         onClick={() => handleSelectFriend(friend)}
-                                        className={`flex items-center gap-3 py-2 px-2 rounded cursor-pointer hover:bg-gray-50 ${selectedFriend?.id === friend.id ? 'bg-gray-100' : ''
-                                            }`}
+                                        className={`flex items-center gap-3 py-2 px-2 rounded cursor-pointer hover:bg-gray-50 ${
+                                            selectedFriend?.id === friend.id ? 'bg-gray-100' : ''
+                                        }`}
                                     >
                                         <div className="relative">
                                             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
@@ -446,7 +440,6 @@ export default function FriendsPage() {
                     </div>
                 </div>
 
-                {/* Right panel — chat */}
                 <div className="lg:col-span-2">
                     <div className="bg-white border rounded-lg h-full flex flex-col" style={{ minHeight: '500px' }}>
                         {!selectedFriend ? (
@@ -457,7 +450,6 @@ export default function FriendsPage() {
                             </div>
                         ) : (
                             <>
-                                {/* Chat header */}
                                 <div className="border-b px-4 py-3 flex items-center justify-between">
                                     <p className="font-medium text-sm">{selectedFriend.full_name}</p>
                                     <button
@@ -468,7 +460,6 @@ export default function FriendsPage() {
                                     </button>
                                 </div>
 
-                                {/* Messages */}
                                 <div className="overflow-y-auto p-4 space-y-3" style={{ height: '360px' }}>
                                     {messages.length === 0 && (
                                         <p className="text-gray-400 text-sm text-center">
@@ -481,10 +472,11 @@ export default function FriendsPage() {
                                             className={`flex flex-col ${msg.sender_id === user.id ? 'items-end' : 'items-start'}`}
                                         >
                                             <div
-                                                className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.sender_id === user.id
-                                                    ? 'bg-black text-white'
-                                                    : 'bg-gray-100 text-gray-800'
-                                                    }`}
+                                                className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                                                    msg.sender_id === user.id
+                                                        ? 'bg-black text-white'
+                                                        : 'bg-gray-100 text-gray-800'
+                                                }`}
                                             >
                                                 {msg.content}
                                             </div>
@@ -500,7 +492,6 @@ export default function FriendsPage() {
                                     <div ref={messagesEndRef} />
                                 </div>
 
-                                {/* Message input */}
                                 <div className="border-t px-4 py-3 flex gap-2">
                                     <input
                                         type="text"
