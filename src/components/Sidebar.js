@@ -22,6 +22,7 @@ export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
 
+  // Fetch user and subjects on mount
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
