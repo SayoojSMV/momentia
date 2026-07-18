@@ -11,11 +11,12 @@
 - Message timestamps in chat (#34)
 - Unread message notification dot (#35)
 - Live friend name suggestions (#36)
+- Friend suggestions for new users (#37)
+- Topic search within subject (#38)
 
 
 ### Planned
-- Friend suggestions for new users (#37)
-- Topic search within subject (#38)
+- Not any at the moment
 
 ---
 

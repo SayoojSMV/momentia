@@ -255,6 +255,7 @@ create table messages (
   receiver_id uuid references auth.users on delete cascade not null,
   content text not null,
   created_at timestamp with time zone default now()
+  is_read boolean default false,
 );
 
 alter table friend_requests enable row level security;
@@ -324,9 +325,4 @@ using (
   auth.uid()::text = (storage.foldername(name))[1]
 );
 
---- ============ MESSAGE READ STATUS ============
-create policy "Users can mark received messages as read"
-on messages
-for update
-using (auth.uid() = receiver_id)
-with check (auth.uid() = receiver_id);
+

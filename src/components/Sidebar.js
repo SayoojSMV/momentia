@@ -38,6 +38,7 @@ export default function Sidebar() {
     })
   }, [])
 
+  // Check for unread messages
   useEffect(() => {
     if (!user) return
 
@@ -52,14 +53,29 @@ export default function Sidebar() {
       setHasUnread(data?.length > 0)
     }
 
-    if (pathname === '/friends') {
-      // Delay check on friends page to allow mark-as-read to complete first
-      const timer = setTimeout(checkUnread, 1500)
-      return () => clearTimeout(timer)
-    } else {
-      checkUnread()
-    }
-  }, [user, pathname])
+    // Initial check
+    checkUnread()
+
+    // Listen for any message changes (new messages or read status updates)
+    const channel = supabase
+      .channel(`sidebar-unread-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => {
+          // Re-check unread count whenever any message changes
+          checkUnread()
+        }
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [user])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
