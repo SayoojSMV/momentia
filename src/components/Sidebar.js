@@ -82,17 +82,15 @@ export default function Sidebar() {
     router.replace('/login')
   }
 
-  // Don't show sidebar on login/auth pages
   if (pathname === '/login' || pathname?.startsWith('/auth')) return null
 
   return (
     <>
-      {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-14'
-          }`}
+        className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${
+          expanded ? 'w-56' : 'w-14'
+        }`}
       >
-        {/* Hamburger */}
         <button
           onClick={() => setExpanded((prev) => !prev)}
           className="h-14 flex items-center text-gray-500 hover:text-gray-800 flex-shrink-0 border-b w-full px-4 gap-3"
@@ -102,7 +100,6 @@ export default function Sidebar() {
           {expanded && <span className="text-sm font-semibold">Momentia</span>}
         </button>
 
-        {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-2">
           {navItems.map((item) => {
             const active = pathname === item.href
@@ -112,8 +109,9 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setExpanded(false)}
-                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 ${active ? 'text-black font-medium bg-gray-50' : 'text-gray-500'
-                  }`}
+                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 ${
+                  active ? 'text-black font-medium bg-gray-50' : 'text-gray-500'
+                }`}
                 title={!expanded ? item.label : undefined}
               >
                 <span className="text-base flex-shrink-0 relative">
@@ -127,7 +125,6 @@ export default function Sidebar() {
             )
           })}
 
-          {/* Subjects section */}
           {expanded && (
             <div className="mt-2">
               <button
@@ -148,10 +145,11 @@ export default function Sidebar() {
                         key={subject.id}
                         href={`/subject/${subject.id}`}
                         onClick={() => setExpanded(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 ${pathname === `/subject/${subject.id}`
-                          ? 'text-black font-medium'
-                          : 'text-gray-500'
-                          }`}
+                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 ${
+                          pathname === `/subject/${subject.id}`
+                            ? 'text-black font-medium'
+                            : 'text-gray-500'
+                        }`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
                         <span className="truncate">{subject.name}</span>
@@ -163,7 +161,6 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* Subjects icon when collapsed */}
           {!expanded && (
             <button
               className="flex items-center justify-center w-full h-11 text-gray-500 hover:bg-gray-50"
@@ -175,7 +172,6 @@ export default function Sidebar() {
           )}
         </nav>
 
-        {/* Sign out at bottom */}
         <div className="border-t py-2">
           <button
             onClick={handleSignOut}
@@ -188,7 +184,6 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Overlay when expanded on small screens */}
       {expanded && (
         <div
           className="fixed inset-0 z-20"
@@ -196,7 +191,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Spacer so page content doesn't go under the sidebar */}
       <div className="w-14 flex-shrink-0" />
     </>
   )
