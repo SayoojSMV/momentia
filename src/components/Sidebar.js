@@ -87,13 +87,11 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${
           expanded ? 'w-56' : 'w-14'
         }`}
       >
-        {/* Hamburger */}
         <button
           onClick={() => setExpanded((prev) => !prev)}
           className="h-14 flex items-center text-gray-500 hover:text-gray-800 flex-shrink-0 border-b w-full px-4 gap-3"
@@ -103,7 +101,6 @@ export default function Sidebar() {
           {expanded && <span className="text-sm font-semibold">Momentia</span>}
         </button>
 
-        {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-2">
           {navItems.map((item) => {
             const active = pathname === item.href
@@ -129,7 +126,6 @@ export default function Sidebar() {
             )
           })}
 
-          {/* Subjects section */}
           {expanded && (
             <div className="mt-2">
               <button
@@ -166,7 +162,6 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* Subjects icon when collapsed */}
           {!expanded && (
             <button
               className="flex items-center justify-center w-full h-11 text-gray-500 hover:bg-gray-50"
@@ -178,7 +173,6 @@ export default function Sidebar() {
           )}
         </nav>
 
-        {/* Sign out at bottom */}
         <div className="border-t py-2">
           <button
             onClick={handleSignOut}
@@ -191,7 +185,6 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Overlay */}
       {expanded && (
         <div
           className="fixed inset-0 z-20"
@@ -199,7 +192,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Spacer */}
       <div className="w-14 flex-shrink-0" />
     </>
   )

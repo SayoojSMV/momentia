@@ -49,7 +49,7 @@
 - [x] Unread message notification dot (#35)
 - [x] Live friend name suggestions (#36)
 - [x] Friend suggestions for new users (#37)
-- [ ] Topic search within subject (#38)
+- [x] Topic search within subject (#38)
 
 ## Future Goals
 - [ ] Microsoft sign-in (#17, blocked — environment issue)
