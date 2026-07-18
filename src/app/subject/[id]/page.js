@@ -19,6 +19,8 @@ export default function SubjectPage({ params }) {
     const [newTopicName, setNewTopicName] = useState('')
     const [generating, setGenerating] = useState(false)
     const [generateError, setGenerateError] = useState(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [allTopics, setAllTopics] = useState([])
     const router = useRouter()
 
     useEffect(() => {
@@ -28,7 +30,6 @@ export default function SubjectPage({ params }) {
                 return
             }
 
-            // Fetch subject
             supabase
                 .from('subjects')
                 .select('*')
@@ -42,7 +43,6 @@ export default function SubjectPage({ params }) {
                     setSubject(data)
                 })
 
-            // Fetch units
             supabase
                 .from('units')
                 .select('*')
@@ -53,7 +53,6 @@ export default function SubjectPage({ params }) {
                     setLoading(false)
                 })
 
-            // Fetch materials
             supabase
                 .from('materials')
                 .select('*')
@@ -65,7 +64,6 @@ export default function SubjectPage({ params }) {
     }, [id, router])
 
     const handleExpandUnit = async (unitId) => {
-        // Toggle closed if already open
         if (expandedUnit === unitId) {
             setExpandedUnit(null)
             return
@@ -73,7 +71,6 @@ export default function SubjectPage({ params }) {
 
         setExpandedUnit(unitId)
 
-        // Only fetch topics if we haven't already
         if (topics[unitId]) return
 
         const { data, error } = await supabase
@@ -171,11 +168,6 @@ export default function SubjectPage({ params }) {
     }
 
     const handleGenerateRoadmap = async () => {
-        if (materials.length === 0) {
-            setGenerateError('Upload at least one file before generating a roadmap.')
-            return
-        }
-
         setGenerating(true)
         setGenerateError(null)
 
@@ -197,7 +189,6 @@ export default function SubjectPage({ params }) {
             return
         }
 
-        // Refetch units after generation
         const { data, error } = await supabase
             .from('units')
             .select('*')
@@ -213,11 +204,27 @@ export default function SubjectPage({ params }) {
         setGenerating(false)
     }
 
+    const handleSearch = async (value) => {
+        setSearchQuery(value)
+        if (!value.trim()) {
+            setAllTopics([])
+            return
+        }
+
+        const { data, error } = await supabase
+            .from('topics')
+            .select('*, units!inner(subject_id, name)')
+            .eq('units.subject_id', id)
+            .ilike('name', `%${value.trim()}%`)
+            .order('order_index', { ascending: true })
+
+        if (!error) setAllTopics(data)
+    }
+
     if (loading) return null
 
     return (
         <main className="min-h-screen bg-gray-50 p-6 max-w-3xl mx-auto">
-            {/* Back button */}
             <button
                 onClick={() => router.push('/')}
                 className="text-sm text-gray-500 hover:text-gray-800 mb-4 inline-block"
@@ -225,7 +232,6 @@ export default function SubjectPage({ params }) {
                 ← Back to dashboard
             </button>
 
-            {/* Subject header */}
             <div className="mb-6">
                 <p className="text-xs text-gray-400 uppercase mb-1">
                     {subject?.category.replace('_', ' ')}
@@ -267,17 +273,18 @@ export default function SubjectPage({ params }) {
                 )}
             </div>
 
-            {/* Generate roadmap button */}
+            {/* Generate roadmap */}
             <div className="mb-6">
                 <button
                     onClick={handleGenerateRoadmap}
                     disabled={generating}
-                    className={`w-full py-3 rounded-lg text-sm font-medium border transition ${generating
+                    className={`w-full py-3 rounded-lg text-sm font-medium border transition ${
+                        generating
                             ? 'opacity-50 cursor-not-allowed bg-white text-gray-400'
                             : materials.length > 0
                                 ? 'bg-black text-white hover:bg-gray-800'
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }`}
+                    }`}
                 >
                     {generating
                         ? 'Generating roadmap...'
@@ -296,6 +303,45 @@ export default function SubjectPage({ params }) {
                 )}
             </div>
 
+            {/* Topic search */}
+            <div className="relative mb-6">
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="🔍 Search topics..."
+                    className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white"
+                />
+                {searchQuery.trim() && (
+                    <div className="absolute top-full left-0 right-0 bg-white border rounded-lg mt-1 shadow-lg z-10 max-h-64 overflow-y-auto">
+                        {allTopics.length === 0 ? (
+                            <p className="text-sm text-gray-400 px-4 py-3">No topics found</p>
+                        ) : (
+                            allTopics.map((topic) => (
+                                <div
+                                    key={topic.id}
+                                    onClick={() => router.push(`/subject/${id}/topic/${topic.id}`)}
+                                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-0"
+                                >
+                                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                                        topic.status === 'completed' ? 'bg-black' :
+                                        topic.status === 'in_progress' ? 'bg-gray-400' :
+                                        'bg-gray-200'
+                                    }`} />
+                                    <div>
+                                        <p className="text-sm font-medium">{topic.name}</p>
+                                        <p className="text-xs text-gray-400">{topic.units?.name}</p>
+                                    </div>
+                                    <span className="ml-auto text-xs text-gray-400 capitalize">
+                                        {topic.difficulty}
+                                    </span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+            </div>
+
             {/* Units */}
             <div className="space-y-3">
                 {units.length === 0 && (
@@ -304,7 +350,6 @@ export default function SubjectPage({ params }) {
 
                 {units.map((unit) => (
                     <div key={unit.id} className="border rounded-lg bg-white overflow-hidden">
-                        {/* Unit header */}
                         <button
                             onClick={() => handleExpandUnit(unit.id)}
                             className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50"
@@ -315,7 +360,6 @@ export default function SubjectPage({ params }) {
                             </span>
                         </button>
 
-                        {/* Topics (shown when expanded) */}
                         {expandedUnit === unit.id && (
                             <div className="border-t px-4 py-3 space-y-2">
                                 {(topics[unit.id] || []).length === 0 && (
@@ -327,10 +371,11 @@ export default function SubjectPage({ params }) {
                                         onClick={() => router.push(`/subject/${id}/topic/${topic.id}`)}
                                         className="flex items-center gap-3 py-2 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded"
                                     >
-                                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${topic.status === 'completed' ? 'bg-black' :
+                                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                                            topic.status === 'completed' ? 'bg-black' :
                                             topic.status === 'in_progress' ? 'bg-gray-400' :
-                                                'bg-gray-200'
-                                            }`} />
+                                            'bg-gray-200'
+                                        }`} />
                                         <span className="text-sm">{topic.name}</span>
                                         <span className="ml-auto text-xs text-gray-400 capitalize">
                                             {topic.difficulty}
@@ -338,7 +383,6 @@ export default function SubjectPage({ params }) {
                                     </div>
                                 ))}
 
-                                {/* Add topic */}
                                 {showTopicInput === unit.id ? (
                                     <div className="flex gap-2 mt-2">
                                         <input
