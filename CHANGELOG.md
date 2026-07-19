@@ -1,22 +1,25 @@
 # Changelog
 
-## v0.2.0 — Improvements (In Progress)
-### Completed
+## v0.2.0 — Improvements ✅
+### Added
 - Real data on dashboard stat tiles and subject card completion (#28)
-- Persist and resume topic timer — saves every 10s, on tab switch, on browser close (#29)
-- Compact timer with pause/resume button in topic header, fixed double content generation bug (#30)
-- Toggle mark-complete (#31)
-- Collapsible sidebar navigation (#32)
-- User profile page (#33)
+- Timer persistence — saves every 10s, on tab switch, on browser close (#29)
+- Compact timer with pause/resume in topic page header (#30)
+- Toggle mark-complete — can undo completion, reverts to in-progress (#31)
+- Collapsible sidebar replacing top navbar (#32)
+- User profile page — avatar, username, activity calendar, stats (#33)
 - Message timestamps in chat (#34)
-- Unread message notification dot (#35)
-- Live friend name suggestions (#36)
-- Friend suggestions for new users (#37)
-- Topic search within subject (#38)
+- Unread message notification dot on sidebar Friends icon (#35)
+- Live friend name suggestions as user types in search (#36)
+- Friend suggestions for users with no friends yet (#37)
+- Topic search within subject roadmap page (#38)
 
-
-### Planned
-- Not any at the moment
+### Fixed
+- Notification dot not clearing after reading messages
+  Root cause: missing UPDATE RLS policy on messages table causing
+  mark-as-read to silently fail (write 0 rows with no error)
+- Schema.sql syntax error in messages table definition
+- Conflicting duplicate SELECT policies on profiles table
 
 ---
 
@@ -28,7 +31,7 @@
 - Timetable scheduler (earliest-deadline-first algorithm)
 - Today panel on dashboard showing current day's sessions
 - Timetable page at /timetable grouped by date
-- Topic content generation via Gemini (saved permanently, never regenerated)
+- Topic content generation via Gemini (saved permanently)
 - Roadmap generation without materials (uses subject name as context)
 - Roadmap regeneration preserves completed and in-progress topics
 - Delete subject with confirmation dialog
