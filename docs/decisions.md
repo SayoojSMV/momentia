@@ -14,12 +14,12 @@
   - Originally planned with Anthropic Claude API
   - Switched to Gemini due to budget constraints
   - The prompt and schema design is provider-agnostic
-- Hosting: Vercel
+- Hosting: Vercel (auto-deploys from main branch)
 
 ## Database Architecture
-Six core tables: profiles, subjects, units, topics,
-topic_dependencies, materials.
-Row Level Security using auth.uid() ownership checks.
+Nine tables: profiles, subjects, units, topics, topic_dependencies,
+materials, schedule, friend_requests, messages.
+Row Level Security using auth.uid() ownership checks on all tables.
 Nested EXISTS subqueries for tables without a direct user_id column.
 supabase/schema.sql maintained as a complete, re-runnable source of truth.
 
@@ -41,33 +41,75 @@ security definer bypasses the chicken-and-egg RLS problem
 - Saved to topics.content column permanently
 - Never regenerated after first save (content is stable)
 - Content length scaled by difficulty level
+- Server-side guard: only saves if content is currently null
 
 ## Timetable Scheduling
 - Earliest-deadline-first packing algorithm (deterministic code, not AI)
 - Gemini handles only priority judgment, not the scheduling math
 - Side Quests excluded from scheduling entirely
-- Schedule recomputes on topic completion or deadline change
+- Schedule stored in schedule table, recomputes on demand
 
 ## Dashboard
 - Dashboard is the homepage (no separate welcome screen for logged-in users)
-- Public landing page (logged-out) is a future addition
 - Four stat tiles: Status, Current streak, Overall completion, Time spent
 - Today panel shows current day's scheduled topics
+- Subject cards show real topic completion percentages
+- Public landing page (logged-out) is a future addition
+
+## Topic Study Timer
+- Timer starts from saved time_spent_seconds on page load (resumes)
+- Saves to Supabase every 10 seconds via setInterval
+- Also saves on tab visibility change (visibilitychange event)
+- Also saves on browser close (beforeunload event)
+- Compact timer in page header with pause/resume on click
+- Mark complete toggleable — can be undone (reverts to in_progress)
 
 ## Chatbot
 - Floating button (bottom-right) in layout.js — appears on every page
-- Conversation built as a single prompt string (not startChat history)
+- Conversation built as a single concatenated prompt string
   Reason: Gemini's startChat requires strict user/model alternation
-  which caused reliability issues
+  which caused reliability issues in testing
 - No DB storage for chat history — resets on page refresh (intentional)
 - File upload supported (filename sent as context)
+- Full subject/unit/topic progress injected as context per request
 
 ## Friends & Chat
 - Users searchable by full_name via ilike query on profiles table
-- Required a "view all profiles" RLS policy addition for search to work
+- Broader "view all profiles" RLS policy required for search
+  (original "view own profile only" policy blocked search entirely)
 - Real-time messaging via Supabase postgres_changes subscription
 - Optimistic updates for sent messages (added to state immediately)
+- Incoming messages marked as read when conversation is opened
+  via bulk UPDATE on messages table
+- messages table requires UPDATE RLS policy for mark-as-read to work
+  (missing policy causes silent failure — update returns no error
+  but writes 0 rows)
 - messages table indexed on sender_id and receiver_id
+- REPLICA IDENTITY FULL required on messages for UPDATE realtime events
+- Sidebar notification dot re-checks on pathname change with 1.5s delay
+  when arriving at /friends (allows mark-as-read to complete first)
+
+## Sidebar Navigation
+- Replaced top horizontal navbar with a collapsible left icon sidebar
+- Collapsed state: 56px wide, icons only
+- Expanded state: 224px wide, icons + labels, triggered by hamburger
+- Collapses on outside click or nav link click via overlay div
+- Subjects section lists all user subjects with direct links
+- Hidden on /login and /auth/* pages via pathname check
+
+## Profile Page
+- Avatar stored in Supabase Storage 'avatars' bucket (public bucket)
+- Avatar path: {user_id}/avatar_{timestamp}.{ext}
+- Username stored in profiles.username (unique constraint)
+- Real-time availability check on every keystroke using .limit(1)
+- Save button disabled while username status is 'checking' or 'taken'
+- Activity calendar shows last 15 weeks, colored by time_spent_seconds
+
+## Topic Search
+- Search bar on subject roadmap page queries all topics across all units
+- Uses ilike for case-insensitive partial matching
+- Results show topic name, unit name, difficulty, and status dot
+- Clicking a result navigates directly to the topic study page
 
 ## Authentication
 - Google sign-in: fully implemented and working (#7)
@@ -75,30 +117,14 @@ security definer bypasses the chicken-and-egg RLS problem
   Persistent AADSTS50020/AADSTS16000 errors across all account types
   and browsers. Suspected Windows-level Web Account Manager cache issue.
   Deferred as post-deployment optional goal.
+  Note: Supabase refers to Microsoft provider as 'azure' not 'microsoft'
 - Apple sign-in: not yet attempted, requires Apple Developer account ($99/yr)
 
 ## Deployment
 - Hosted on Vercel (auto-deploys from main branch)
 - Live URL: https://momentia-jooyas.vercel.app
-- Supabase URL Configuration updated with production URL
-- Vercel Authentication disabled (was causing double login)
-- Redirect URLs whitelisted: localhost:3000/** and
-  momentia-jooyas.vercel.app/**
-
-## Sidebar Navigation
-- Replaced top horizontal navbar with a collapsible left icon sidebar
-- Collapsed state: 56px wide, icons only
-- Expanded state: 224px wide, icons + labels, triggered by hamburger click
-- Collapses on outside click or nav link click via invisible overlay div
-- Subjects section lists all user subjects with direct links
-- Hidden on login and auth callback pages via pathname check
-- Renamed Navbar.js to Sidebar.js
-
-## Profile Page
-- Avatar stored in Supabase Storage 'avatars' bucket (public bucket)
-- Avatar path: {user_id}/avatar_{timestamp}.{ext}
-- Username stored in profiles.username (unique constraint)
-- Real-time availability check on every keystroke using .limit(1) query
-- Save button disabled while status is 'checking' or 'taken'
-- Activity calendar shows last 15 weeks, colored by time_spent_seconds per day
-- Stats calculated live from subjects/units/topics tables
+- Vercel Authentication disabled (was causing double login on first visit)
+- Supabase redirect URLs whitelisted:
+    http://localhost:3000/**
+    https://momentia-jooyas.vercel.app/**
+- Supabase Site URL set to production URL

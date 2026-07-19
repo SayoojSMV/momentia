@@ -38,7 +38,7 @@
 - [x] Production Supabase URL configuration
 - [x] Live at https://momentia-jooyas.vercel.app
 
-## Phase 7 — Improvements (In Progress)
+## Phase 7 — Improvements ✅
 - [x] Real data on dashboard stat tiles (#28)
 - [x] Persist and resume topic timer (#29)
 - [x] Compact timer with pause (#30)
@@ -57,6 +57,7 @@
 - [ ] Mobile responsiveness pass
 - [ ] Custom domain
 - [ ] Dark mode toggle
-- [ ] Study streak real calculation
+- [ ] Real streak calculation (column exists, logic not yet implemented)
 - [ ] Notification system
 - [ ] Public landing page (logged-out)
+- [ ] Settings page (daily study minutes, preferences)
