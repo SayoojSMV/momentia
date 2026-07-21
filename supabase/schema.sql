@@ -311,3 +311,16 @@ create policy "Users can delete own avatar"
     bucket_id = 'avatars' and
     auth.uid()::text = (storage.foldername(name))[1]
   );
+
+--- ============ MIGRATIONS ============
+alter table profiles 
+add column if not exists designation text,
+add column if not exists institution text,
+add column if not exists year_of_study text,
+add column if not exists prior_subjects text[] default '{}';
+
+alter table profiles
+add column if not exists daily_study_minutes integer default 120,
+add column if not exists session_length_minutes integer default 45,
+add column if not exists rest_day text default 'none',
+add column if not exists exam_reminder_days integer default 5;
