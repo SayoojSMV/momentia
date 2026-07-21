@@ -1,36 +1,36 @@
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import Chatbot from "@/components/Chatbot";
+import { Geist, Geist_Mono } from 'next/font/google'
+import './globals.css'
+import Sidebar from '@/components/Sidebar'
+import Chatbot from '@/components/Chatbot'
+import { ThemeProvider } from '@/lib/ThemeContext'
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata = {
-  title: "Momentia",
-  description: "AI-powered study planning",
-};
+  title: 'Momentia',
+  description: 'AI-powered study planning',
+}
 
 export default function RootLayout({ children }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-row">
-        <Sidebar />
-        <div className="flex-1 relative z-10 min-w-0">
-          {children}
-        </div>
-        <Chatbot />
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full flex">
+        <ThemeProvider>
+          <Sidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            {children}
+          </div>
+          <Chatbot />
+        </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useTheme } from '@/lib/ThemeContext'
 
 const DESIGNATIONS = [
   'Engineering',
@@ -38,6 +39,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const router = useRouter()
+  const { darkMode, toggleDarkMode, sidebarDefault, setSidebarDefault } = useTheme()
 
   // Account fields
   const [designation, setDesignation] = useState('')
@@ -254,11 +256,10 @@ export default function SettingsPage() {
                 <button
                   key={len}
                   onClick={() => setSessionLength(len)}
-                  className={`flex-1 py-2 rounded-md text-sm border transition ${
-                    sessionLength === len
+                  className={`flex-1 py-2 rounded-md text-sm border transition ${sessionLength === len
                       ? 'bg-black text-white border-black'
                       : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   {len}m
                 </button>
@@ -293,11 +294,10 @@ export default function SettingsPage() {
                 <button
                   key={d}
                   onClick={() => setReminderDays(d)}
-                  className={`flex-1 py-2 rounded-md text-sm border transition ${
-                    reminderDays === d
+                  className={`flex-1 py-2 rounded-md text-sm border transition ${reminderDays === d
                       ? 'bg-black text-white border-black'
                       : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   {d} days
                 </button>
@@ -310,17 +310,71 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* Appearance */}
+      <section className="bg-white border rounded-lg p-6 mb-6">
+        <h2 className="text-base font-semibold mb-4">Appearance</h2>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Dark mode</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Switch between light and dark theme
+              </p>
+            </div>
+            <button
+              onClick={toggleDarkMode}
+              className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-black' : 'bg-gray-200'
+                }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${darkMode ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Sidebar default state</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                How the sidebar appears when you first load a page
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSidebarDefault('collapsed')}
+                className={`px-3 py-1.5 rounded-md text-sm border transition ${sidebarDefault === 'collapsed'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+              >
+                Collapsed
+              </button>
+              <button
+                onClick={() => setSidebarDefault('expanded')}
+                className={`px-3 py-1.5 rounded-md text-sm border transition ${sidebarDefault === 'expanded'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+              >
+                Expanded
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Save button */}
       <button
         onClick={handleSave}
         disabled={saving}
-        className={`w-full py-3 rounded-lg text-sm font-medium transition ${
-          saving
+        className={`w-full py-3 rounded-lg text-sm font-medium transition ${saving
             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
             : saved
-            ? 'bg-green-600 text-white'
-            : 'bg-black text-white hover:bg-gray-800'
-        }`}
+              ? 'bg-green-600 text-white'
+              : 'bg-black text-white hover:bg-gray-800'
+          }`}
       >
         {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save settings'}
       </button>
