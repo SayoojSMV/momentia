@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
+import { useTheme } from '@/lib/ThemeContext'
 import Link from 'next/link'
 
 const navItems = [
@@ -14,7 +15,12 @@ const navItems = [
 ]
 
 export default function Sidebar() {
+  const { sidebarDefault } = useTheme()
   const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    if (sidebarDefault === 'expanded') setExpanded(true)
+  }, [sidebarDefault])
   const [subjects, setSubjects] = useState([])
   const [showSubjects, setShowSubjects] = useState(false)
   const [user, setUser] = useState(null)
@@ -88,9 +94,8 @@ export default function Sidebar() {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${
-          expanded ? 'w-56' : 'w-14'
-        }`}
+        className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-14'
+          }`}
       >
         <button
           onClick={() => setExpanded((prev) => !prev)}
@@ -110,9 +115,8 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setExpanded(false)}
-                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 ${
-                  active ? 'text-black font-medium bg-gray-50' : 'text-gray-500'
-                }`}
+                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 ${active ? 'text-black font-medium bg-gray-50' : 'text-gray-500'
+                  }`}
                 title={!expanded ? item.label : undefined}
               >
                 <span className="text-base flex-shrink-0 relative">
@@ -146,11 +150,10 @@ export default function Sidebar() {
                         key={subject.id}
                         href={`/subject/${subject.id}`}
                         onClick={() => setExpanded(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 ${
-                          pathname === `/subject/${subject.id}`
+                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 ${pathname === `/subject/${subject.id}`
                             ? 'text-black font-medium'
                             : 'text-gray-500'
-                        }`}
+                          }`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
                         <span className="truncate">{subject.name}</span>
