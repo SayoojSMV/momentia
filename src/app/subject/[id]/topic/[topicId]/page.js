@@ -41,11 +41,9 @@ export default function TopicPage({ params }) {
           setCompleted(data.status === 'completed')
           setLoading(false)
 
-          // Load existing content, or generate with subject name context
           if (data.content) {
             setContent(data.content)
           } else {
-            // Fetch subject name first, then generate content once
             supabase
               .from('units')
               .select('subject_id, subjects(name)')
@@ -72,7 +70,6 @@ export default function TopicPage({ params }) {
               })
           }
 
-          // Find next topic in same unit
           supabase
             .from('topics')
             .select('*')
@@ -88,21 +85,17 @@ export default function TopicPage({ params }) {
     })
   }, [topicId, router])
 
-  // Start/stop timer based on paused and completed state
   useEffect(() => {
     if (loading || completed || paused) {
       clearInterval(intervalRef.current)
       return
     }
-
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => prev + 1)
     }, 1000)
-
     return () => clearInterval(intervalRef.current)
   }, [loading, completed, paused])
 
-  // Save time to Supabase every 10 seconds and on page leave
   useEffect(() => {
     if (!topic) return
 
@@ -114,11 +107,9 @@ export default function TopicPage({ params }) {
     }
 
     const saveInterval = setInterval(saveProgress, 10000)
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') saveProgress()
     }
-
     const handleBeforeUnload = () => saveProgress()
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -132,7 +123,6 @@ export default function TopicPage({ params }) {
     }
   }, [topic, topicId])
 
-  // Keep savedSecondsRef in sync with live timer
   useEffect(() => {
     savedSecondsRef.current = seconds
   }, [seconds])
@@ -141,10 +131,7 @@ export default function TopicPage({ params }) {
     clearInterval(intervalRef.current)
     await supabase
       .from('topics')
-      .update({
-        status: 'completed',
-        time_spent_seconds: seconds,
-      })
+      .update({ status: 'completed', time_spent_seconds: seconds })
       .eq('id', topicId)
     setCompleted(true)
   }
@@ -170,11 +157,11 @@ export default function TopicPage({ params }) {
   if (loading) return null
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 max-w-2xl mx-auto">
       {/* Back button */}
       <button
         onClick={() => router.push(`/subject/${id}`)}
-        className="text-sm text-gray-500 hover:text-gray-800 mb-4 inline-block"
+        className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white mb-4 inline-block"
       >
         ← Back to subject
       </button>
@@ -182,20 +169,28 @@ export default function TopicPage({ params }) {
       {/* Topic header with compact timer */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex-1">
-          <span className={`text-xs px-2 py-1 rounded-full ${topic.difficulty === 'easy' ? 'bg-gray-100 text-gray-500' :
-            topic.difficulty === 'medium' ? 'bg-gray-200 text-gray-600' :
-              'bg-gray-800 text-white'
-            }`}>
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            topic.difficulty === 'easy'
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+              : topic.difficulty === 'medium'
+              ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              : 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900'
+          }`}>
             {topic.difficulty}
           </span>
-          <h1 className="text-2xl font-semibold mt-2">{topic.name}</h1>
+          <h1 className="text-2xl font-semibold mt-2 dark:text-white">{topic.name}</h1>
         </div>
 
         {/* Compact timer */}
         <div className="flex flex-col items-end gap-2 ml-4 flex-shrink-0">
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${completed ? 'bg-white' : paused ? 'bg-yellow-50 border-yellow-200' : 'bg-white'
-            }`}>
-            <span className="font-mono text-lg font-semibold">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+            completed
+              ? 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+              : paused
+              ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+          }`}>
+            <span className="font-mono text-lg font-semibold dark:text-white">
               {formatTime(seconds)}
             </span>
             {completed ? (
@@ -203,7 +198,7 @@ export default function TopicPage({ params }) {
             ) : (
               <button
                 onClick={() => setPaused((prev) => !prev)}
-                className="text-xs text-gray-400 hover:text-gray-700 ml-1"
+                className="text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 ml-1"
                 title={paused ? 'Resume timer' : 'Pause timer'}
               >
                 {paused ? '▶' : '⏸'}
@@ -211,7 +206,7 @@ export default function TopicPage({ params }) {
             )}
           </div>
           {!completed && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
               {paused ? 'Paused' : 'Timer running'}
             </p>
           )}
@@ -219,14 +214,14 @@ export default function TopicPage({ params }) {
       </div>
 
       {/* Content */}
-      <div className="bg-white border rounded-lg p-6 mb-6">
-        <p className="text-sm font-medium text-gray-700 mb-3">Study content</p>
+      <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6 mb-6">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Study content</p>
         {generatingContent ? (
-          <p className="text-gray-400 text-sm">Generating study content...</p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm">Generating study content...</p>
         ) : content ? (
-          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{content}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{content}</p>
         ) : (
-          <p className="text-gray-400 text-sm">Could not generate content. Try refreshing.</p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm">Could not generate content. Try refreshing.</p>
         )}
       </div>
 
@@ -240,26 +235,26 @@ export default function TopicPage({ params }) {
         </button>
       ) : (
         <div className="space-y-3">
-          <div className="w-full bg-gray-100 text-gray-500 py-3 rounded-lg text-sm font-medium text-center">
+          <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-3 rounded-lg text-sm font-medium text-center">
             ✓ Topic completed
           </div>
           <button
             onClick={handleMarkIncomplete}
-            className="w-full border border-gray-300 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+            className="w-full border dark:border-gray-600 border-gray-300 py-2 rounded-lg text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             Mark as incomplete
           </button>
           {nextTopic ? (
             <button
               onClick={() => router.push(`/subject/${id}/topic/${nextTopic.id}`)}
-              className="w-full border py-3 rounded-lg text-sm font-medium hover:bg-gray-50"
+              className="w-full border dark:border-gray-600 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
             >
               Next: {nextTopic.name} →
             </button>
           ) : (
             <button
               onClick={() => router.push(`/subject/${id}`)}
-              className="w-full border py-3 rounded-lg text-sm font-medium hover:bg-gray-50"
+              className="w-full border dark:border-gray-600 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
             >
               ← Back to subject
             </button>
