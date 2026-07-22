@@ -21,6 +21,7 @@ export default function Sidebar() {
   useEffect(() => {
     if (sidebarDefault === 'expanded') setExpanded(true)
   }, [sidebarDefault])
+
   const [subjects, setSubjects] = useState([])
   const [showSubjects, setShowSubjects] = useState(false)
   const [user, setUser] = useState(null)
@@ -28,7 +29,6 @@ export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
 
-  // Fetch user and subjects on mount
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
@@ -45,7 +45,6 @@ export default function Sidebar() {
     })
   }, [])
 
-  // Check for unread messages
   useEffect(() => {
     if (!user) return
 
@@ -60,10 +59,8 @@ export default function Sidebar() {
       setHasUnread(data?.length > 0)
     }
 
-    // Initial check
     checkUnread()
 
-    // Listen for any message changes (new messages or read status updates)
     const channel = supabase
       .channel(`sidebar-unread-${user.id}`)
       .on(
@@ -74,15 +71,35 @@ export default function Sidebar() {
           table: 'messages',
           filter: `receiver_id=eq.${user.id}`,
         },
-        () => {
-          // Re-check unread count whenever any message changes
-          checkUnread()
-        }
+        () => checkUnread()
       )
       .subscribe()
 
     return () => supabase.removeChannel(channel)
   }, [user])
+
+  // Re-check unread on pathname change
+  useEffect(() => {
+    if (!user) return
+
+    const checkUnread = async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('receiver_id', user.id)
+        .eq('is_read', false)
+        .limit(1)
+
+      setHasUnread(data?.length > 0)
+    }
+
+    if (pathname === '/friends') {
+      const timer = setTimeout(checkUnread, 1500)
+      return () => clearTimeout(timer)
+    } else {
+      checkUnread()
+    }
+  }, [user, pathname])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -94,16 +111,19 @@ export default function Sidebar() {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-full bg-white border-r z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-14'
-          }`}
+        className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-900 border-r dark:border-gray-700 z-40 flex flex-col transition-all duration-200 ${
+          expanded ? 'w-56' : 'w-14'
+        }`}
       >
         <button
           onClick={() => setExpanded((prev) => !prev)}
-          className="h-14 flex items-center text-gray-500 hover:text-gray-800 flex-shrink-0 border-b w-full px-4 gap-3"
+          className="h-14 flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white flex-shrink-0 border-b dark:border-gray-700 w-full px-4 gap-3"
           title={expanded ? 'Collapse' : 'Expand'}
         >
           <span className="text-lg flex-shrink-0">☰</span>
-          {expanded && <span className="text-sm font-semibold">Momentia</span>}
+          {expanded && (
+            <span className="text-sm font-semibold dark:text-white">Momentia</span>
+          )}
         </button>
 
         <nav className="flex-1 overflow-y-auto py-2">
@@ -115,8 +135,11 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setExpanded(false)}
-                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 ${active ? 'text-black font-medium bg-gray-50' : 'text-gray-500'
-                  }`}
+                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                  active
+                    ? 'text-black dark:text-white font-medium bg-gray-50 dark:bg-gray-800'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}
                 title={!expanded ? item.label : undefined}
               >
                 <span className="text-base flex-shrink-0 relative">
@@ -134,7 +157,7 @@ export default function Sidebar() {
             <div className="mt-2">
               <button
                 onClick={() => setShowSubjects((prev) => !prev)}
-                className="flex items-center w-full h-11 px-4 gap-3 text-sm text-gray-500 hover:bg-gray-50"
+                className="flex items-center w-full h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <span className="text-base flex-shrink-0">📚</span>
                 <span className="flex-1 text-left truncate">Subjects</span>
@@ -143,19 +166,22 @@ export default function Sidebar() {
               {showSubjects && (
                 <div className="pl-4 pb-2">
                   {subjects.length === 0 ? (
-                    <p className="text-xs text-gray-400 px-4 py-2">No subjects yet</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 px-4 py-2">
+                      No subjects yet
+                    </p>
                   ) : (
                     subjects.map((subject) => (
                       <Link
                         key={subject.id}
                         href={`/subject/${subject.id}`}
                         onClick={() => setExpanded(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 ${pathname === `/subject/${subject.id}`
-                            ? 'text-black font-medium'
-                            : 'text-gray-500'
-                          }`}
+                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                          pathname === `/subject/${subject.id}`
+                            ? 'text-black dark:text-white font-medium'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
                         <span className="truncate">{subject.name}</span>
                       </Link>
                     ))
@@ -167,7 +193,7 @@ export default function Sidebar() {
 
           {!expanded && (
             <button
-              className="flex items-center justify-center w-full h-11 text-gray-500 hover:bg-gray-50"
+              className="flex items-center justify-center w-full h-11 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
               title="Subjects"
               onClick={() => setExpanded(true)}
             >
@@ -176,10 +202,10 @@ export default function Sidebar() {
           )}
         </nav>
 
-        <div className="border-t py-2">
+        <div className="border-t dark:border-gray-700 py-2">
           <button
             onClick={handleSignOut}
-            className="flex items-center h-11 px-4 gap-3 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-50 w-full"
+            className="flex items-center h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 w-full"
             title={!expanded ? 'Sign out' : undefined}
           >
             <span className="text-base flex-shrink-0">🚪</span>
