@@ -13,6 +13,14 @@
 - Live friend name suggestions as user types in search (#36)
 - Friend suggestions for users with no friends yet (#37)
 - Topic search within subject roadmap page (#38)
+- Settings page — Account details (#61)
+- Settings page — Study preferences (#62)
+- Settings page — Appearance (dark mode + sidebar default) (#63)
+
+### Planning
+- Dark mode — global theme implementation (#64)
+- Settings page — Danger zone (delete account, reset data) (#65)
+- Make adjustments to the sidebar (#66)
 
 ### Fixed
 - Notification dot not clearing after reading messages

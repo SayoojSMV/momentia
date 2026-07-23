@@ -54,8 +54,6 @@ export default function Chatbot() {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-
-    // Convert file to base64 for sending as context
     const reader = new FileReader()
     reader.onload = async () => {
       const content = `[Uploaded file: ${file.name}]\n\nPlease analyze this file and help me understand the content.`
@@ -77,9 +75,12 @@ export default function Chatbot() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-20 right-6 w-80 bg-white border rounded-xl shadow-xl flex flex-col z-50" style={{ height: '460px' }}>
+        <div
+          className="fixed bottom-20 right-6 w-80 bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-xl shadow-xl flex flex-col z-50"
+          style={{ height: '460px' }}
+        >
           {/* Header */}
-          <div className="border-b px-4 py-3 rounded-t-xl bg-black text-white">
+          <div className="border-b dark:border-gray-700 px-4 py-3 rounded-t-xl bg-black text-white">
             <p className="text-sm font-medium">Momentia Assistant</p>
             <p className="text-xs text-gray-400">Ask me anything</p>
           </div>
@@ -95,7 +96,7 @@ export default function Chatbot() {
                   className={`max-w-[85%] px-3 py-2 rounded-lg text-sm ${
                     msg.role === 'user'
                       ? 'bg-black text-white'
-                      : 'bg-gray-100 text-gray-800'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
                   }`}
                 >
                   {msg.content}
@@ -104,7 +105,7 @@ export default function Chatbot() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 px-3 py-2 rounded-lg text-sm text-gray-500">
+                <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400">
                   Thinking...
                 </div>
               </div>
@@ -113,10 +114,10 @@ export default function Chatbot() {
           </div>
 
           {/* Input */}
-          <div className="border-t p-3 flex gap-2 items-center">
+          <div className="border-t dark:border-gray-700 p-3 flex gap-2 items-center">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="text-gray-400 hover:text-gray-700 text-lg flex-shrink-0"
+              className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-lg flex-shrink-0"
               title="Upload file"
             >
               📎
@@ -134,7 +135,7 @@ export default function Chatbot() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
               placeholder="Ask anything..."
-              className="flex-1 text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-black"
+              className="flex-1 text-sm border dark:border-gray-600 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
             <button
               onClick={() => handleSend(input)}
