@@ -15,7 +15,7 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-  const { sidebarDefault } = useTheme()
+  const { sidebarDefault, darkMode, toggleDarkMode } = useTheme()
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
@@ -111,9 +111,8 @@ export default function Sidebar() {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-900 border-r dark:border-gray-700 z-40 flex flex-col transition-all duration-200 ${
-          expanded ? 'w-56' : 'w-14'
-        }`}
+        className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-900 border-r dark:border-gray-700 z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-14'
+          }`}
       >
         <button
           onClick={() => setExpanded((prev) => !prev)}
@@ -135,11 +134,10 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setExpanded(false)}
-                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                  active
+                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 dark:hover:bg-gray-800 ${active
                     ? 'text-black dark:text-white font-medium bg-gray-50 dark:bg-gray-800'
                     : 'text-gray-500 dark:text-gray-400'
-                }`}
+                  }`}
                 title={!expanded ? item.label : undefined}
               >
                 <span className="text-base flex-shrink-0 relative">
@@ -175,11 +173,10 @@ export default function Sidebar() {
                         key={subject.id}
                         href={`/subject/${subject.id}`}
                         onClick={() => setExpanded(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                          pathname === `/subject/${subject.id}`
+                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 dark:hover:bg-gray-800 ${pathname === `/subject/${subject.id}`
                             ? 'text-black dark:text-white font-medium'
                             : 'text-gray-500 dark:text-gray-400'
-                        }`}
+                          }`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
                         <span className="truncate">{subject.name}</span>
@@ -203,6 +200,21 @@ export default function Sidebar() {
         </nav>
 
         <div className="border-t dark:border-gray-700 py-2">
+          {/* Dark mode toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="flex items-center h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 w-full"
+            title={!expanded ? (darkMode ? 'Light mode' : 'Dark mode') : undefined}
+          >
+            <span className="text-base flex-shrink-0">
+              {darkMode ? '☀️' : '🌙'}
+            </span>
+            {expanded && (
+              <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>
+            )}
+          </button>
+
+          {/* Sign out */}
           <button
             onClick={handleSignOut}
             className="flex items-center h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 w-full"

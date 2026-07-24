@@ -6,27 +6,13 @@ import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
 
 const DESIGNATIONS = [
-  'Engineering',
-  'Medicine',
-  'Law',
-  'MBA',
-  'Arts & Humanities',
-  'Science',
-  'Commerce',
-  'Working Professional',
-  'Self-learner',
-  'Other',
+  'Engineering', 'Medicine', 'Law', 'MBA', 'Arts & Humanities',
+  'Science', 'Commerce', 'Working Professional', 'Self-learner', 'Other',
 ]
 
 const YEARS = [
-  '1st Year',
-  '2nd Year',
-  '3rd Year',
-  '4th Year',
-  'Postgraduate',
-  'PhD',
-  'Working',
-  'Other',
+  '1st Year', '2nd Year', '3rd Year', '4th Year',
+  'Postgraduate', 'PhD', 'Working', 'Other',
 ]
 
 const SESSION_LENGTHS = [25, 45, 60, 90]
@@ -41,14 +27,11 @@ export default function SettingsPage() {
   const router = useRouter()
   const { darkMode, toggleDarkMode, sidebarDefault, setSidebarDefault } = useTheme()
 
-  // Account fields
   const [designation, setDesignation] = useState('')
   const [institution, setInstitution] = useState('')
   const [yearOfStudy, setYearOfStudy] = useState('')
   const [priorSubjects, setPriorSubjects] = useState([])
   const [priorInput, setPriorInput] = useState('')
-
-  // Study preference fields
   const [dailyMinutes, setDailyMinutes] = useState(120)
   const [sessionLength, setSessionLength] = useState(45)
   const [restDay, setRestDay] = useState('None')
@@ -56,17 +39,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.replace('/login')
-        return
-      }
+      if (!session) { router.replace('/login'); return }
       setUser(session.user)
-
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+      supabase.from('profiles').select('*').eq('id', session.user.id).single()
         .then(({ data }) => {
           if (!data) return
           setDesignation(data.designation || '')
@@ -96,57 +71,42 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     setSaved(false)
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        designation,
-        institution,
-        year_of_study: yearOfStudy,
-        prior_subjects: priorSubjects,
-        daily_study_minutes: dailyMinutes,
-        session_length_minutes: sessionLength,
-        rest_day: restDay,
-        exam_reminder_days: reminderDays,
-      })
-      .eq('id', user.id)
-
+    const { error } = await supabase.from('profiles').update({
+      designation, institution, year_of_study: yearOfStudy,
+      prior_subjects: priorSubjects, daily_study_minutes: dailyMinutes,
+      session_length_minutes: sessionLength, rest_day: restDay,
+      exam_reminder_days: reminderDays,
+    }).eq('id', user.id)
     setSaving(false)
-    if (!error) {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    }
+    if (!error) { setSaved(true); setTimeout(() => setSaved(false), 3000) }
   }
 
   if (loading) return null
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-6">Settings</h1>
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-6 dark:text-white">Settings</h1>
 
       {/* Account details */}
-      <section className="bg-white border rounded-lg p-6 mb-6">
-        <h2 className="text-base font-semibold mb-4">Account</h2>
-
+      <section className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6 mb-6">
+        <h2 className="text-base font-semibold mb-4 dark:text-white">Account</h2>
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-gray-600 block mb-1">
+            <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1">
               What are you pursuing?
             </label>
             <select
               value={designation}
               onChange={(e) => setDesignation(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+              className="w-full border dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
             >
               <option value="">Select designation</option>
-              {DESIGNATIONS.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
+              {DESIGNATIONS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="text-sm text-gray-600 block mb-1">
+            <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1">
               Institution / University
               <span className="text-gray-400 ml-1">(optional)</span>
             </label>
@@ -155,31 +115,29 @@ export default function SettingsPage() {
               value={institution}
               onChange={(e) => setInstitution(e.target.value)}
               placeholder="e.g. REVA University"
-              className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+              className="w-full border dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
 
           <div>
-            <label className="text-sm text-gray-600 block mb-1">
+            <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1">
               Year of study
             </label>
             <select
               value={yearOfStudy}
               onChange={(e) => setYearOfStudy(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+              className="w-full border dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
             >
               <option value="">Select year</option>
-              {YEARS.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
+              {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="text-sm text-gray-600 block mb-1">
+            <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1">
               Subjects you already know
             </label>
-            <p className="text-xs text-gray-400 mb-2">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
               The AI will use this to calibrate content difficulty
             </p>
             <div className="flex gap-2 mb-2">
@@ -189,7 +147,7 @@ export default function SettingsPage() {
                 onChange={(e) => setPriorInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddPriorSubject()}
                 placeholder="e.g. Python, Calculus, History"
-                className="flex-1 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+                className="flex-1 border dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
               />
               <button
                 onClick={handleAddPriorSubject}
@@ -203,12 +161,12 @@ export default function SettingsPage() {
                 {priorSubjects.map((s) => (
                   <span
                     key={s}
-                    className="flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full"
+                    className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-3 py-1 rounded-full"
                   >
                     {s}
                     <button
                       onClick={() => handleRemovePriorSubject(s)}
-                      className="text-gray-400 hover:text-gray-700 ml-1"
+                      className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 ml-1"
                     >
                       ×
                     </button>
@@ -221,25 +179,21 @@ export default function SettingsPage() {
       </section>
 
       {/* Study preferences */}
-      <section className="bg-white border rounded-lg p-6 mb-6">
-        <h2 className="text-base font-semibold mb-4">Study preferences</h2>
-
+      <section className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6 mb-6">
+        <h2 className="text-base font-semibold mb-4 dark:text-white">Study preferences</h2>
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-gray-600 block mb-1">
+            <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1">
               Daily study goal
             </label>
             <div className="flex items-center gap-3">
               <input
-                type="range"
-                min={30}
-                max={480}
-                step={30}
+                type="range" min={30} max={480} step={30}
                 value={dailyMinutes}
                 onChange={(e) => setDailyMinutes(Number(e.target.value))}
                 className="flex-1"
               />
-              <span className="text-sm font-medium w-20 text-right">
+              <span className="text-sm font-medium w-20 text-right dark:text-white">
                 {dailyMinutes >= 60
                   ? `${Math.floor(dailyMinutes / 60)}h ${dailyMinutes % 60 > 0 ? `${dailyMinutes % 60}m` : ''}`
                   : `${dailyMinutes}m`}
@@ -248,7 +202,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="text-sm text-gray-600 block mb-1">
+            <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1">
               Preferred session length
             </label>
             <div className="flex gap-2">
@@ -256,10 +210,11 @@ export default function SettingsPage() {
                 <button
                   key={len}
                   onClick={() => setSessionLength(len)}
-                  className={`flex-1 py-2 rounded-md text-sm border transition ${sessionLength === len
+                  className={`flex-1 py-2 rounded-md text-sm border transition ${
+                    sessionLength === len
                       ? 'bg-black text-white border-black'
-                      : 'bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
                 >
                   {len}m
                 </button>
@@ -268,25 +223,21 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="text-sm text-gray-600 block mb-1">
+            <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1">
               Rest day
-              <span className="text-gray-400 ml-1 text-xs">
-                (timetable skips this day)
-              </span>
+              <span className="text-gray-400 dark:text-gray-500 ml-1 text-xs">(timetable skips this day)</span>
             </label>
             <select
               value={restDay}
               onChange={(e) => setRestDay(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+              className="w-full border dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
             >
-              {REST_DAYS.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
+              {REST_DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="text-sm text-gray-600 block mb-1">
+            <label className="text-sm text-gray-600 dark:text-gray-400 block mb-1">
               Exam reminder lead time
             </label>
             <div className="flex gap-2">
@@ -294,16 +245,17 @@ export default function SettingsPage() {
                 <button
                   key={d}
                   onClick={() => setReminderDays(d)}
-                  className={`flex-1 py-2 rounded-md text-sm border transition ${reminderDays === d
+                  className={`flex-1 py-2 rounded-md text-sm border transition ${
+                    reminderDays === d
                       ? 'bg-black text-white border-black'
-                      : 'bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
                 >
                   {d} days
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               Dashboard shows "Falling behind" this many days before an exam
             </p>
           </div>
@@ -311,52 +263,53 @@ export default function SettingsPage() {
       </section>
 
       {/* Appearance */}
-      <section className="bg-white border rounded-lg p-6 mb-6">
-        <h2 className="text-base font-semibold mb-4">Appearance</h2>
-
+      <section className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6 mb-6">
+        <h2 className="text-base font-semibold mb-4 dark:text-white">Appearance</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Dark mode</p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-sm font-medium dark:text-white">Dark mode</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 Switch between light and dark theme
               </p>
             </div>
             <button
               onClick={toggleDarkMode}
-              className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-black' : 'bg-gray-200'
-                }`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                darkMode ? 'bg-black' : 'bg-gray-200'
+              }`}
             >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${darkMode ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-              />
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                darkMode ? 'translate-x-5' : 'translate-x-0'
+              }`} />
             </button>
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Sidebar default state</p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-sm font-medium dark:text-white">Sidebar default state</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 How the sidebar appears when you first load a page
               </p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setSidebarDefault('collapsed')}
-                className={`px-3 py-1.5 rounded-md text-sm border transition ${sidebarDefault === 'collapsed'
+                className={`px-3 py-1.5 rounded-md text-sm border transition ${
+                  sidebarDefault === 'collapsed'
                     ? 'bg-black text-white border-black'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
               >
                 Collapsed
               </button>
               <button
                 onClick={() => setSidebarDefault('expanded')}
-                className={`px-3 py-1.5 rounded-md text-sm border transition ${sidebarDefault === 'expanded'
+                className={`px-3 py-1.5 rounded-md text-sm border transition ${
+                  sidebarDefault === 'expanded'
                     ? 'bg-black text-white border-black'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
               >
                 Expanded
               </button>
@@ -369,12 +322,13 @@ export default function SettingsPage() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className={`w-full py-3 rounded-lg text-sm font-medium transition ${saving
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        className={`w-full py-3 rounded-lg text-sm font-medium transition ${
+          saving
+            ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
             : saved
-              ? 'bg-green-600 text-white'
-              : 'bg-black text-white hover:bg-gray-800'
-          }`}
+            ? 'bg-green-600 text-white'
+            : 'bg-black text-white hover:bg-gray-800'
+        }`}
       >
         {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save settings'}
       </button>

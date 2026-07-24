@@ -14,12 +14,9 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState(null)
-  const [usernameStatus, setUsernameStatus] = useState(null) // 'available' | 'taken' | 'checking'
+  const [usernameStatus, setUsernameStatus] = useState(null)
   const [stats, setStats] = useState({
-    totalMinutes: 0,
-    topicsCompleted: 0,
-    subjectsCount: 0,
-    streak: 0,
+    totalMinutes: 0, topicsCompleted: 0, subjectsCount: 0, streak: 0,
   })
   const [activityData, setActivityData] = useState({})
   const fileInputRef = useRef(null)
@@ -27,10 +24,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.replace('/login')
-        return
-      }
+      if (!session) { router.replace('/login'); return }
       setUser(session.user)
       fetchProfile(session.user)
       fetchStats(session.user.id)
@@ -40,11 +34,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async (user) => {
     const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-
+      .from('profiles').select('*').eq('id', user.id).single()
     if (!error && data) {
       setProfile(data)
       setEditName(data.full_name || user.user_metadata?.full_name || '')
@@ -55,33 +45,15 @@ export default function ProfilePage() {
   }
 
   const fetchStats = async (userId) => {
-    // Subjects count
-    const { data: subjects } = await supabase
-      .from('subjects')
-      .select('id')
-      .eq('user_id', userId)
-
-    // Topics completed and time spent
-    const { data: units } = await supabase
-      .from('units')
-      .select('id')
+    const { data: subjects } = await supabase.from('subjects').select('id').eq('user_id', userId)
+    const { data: units } = await supabase.from('units').select('id')
       .in('subject_id', (subjects || []).map((s) => s.id))
-
-    const { data: topics } = await supabase
-      .from('topics')
-      .select('status, time_spent_seconds')
+    const { data: topics } = await supabase.from('topics').select('status, time_spent_seconds')
       .in('unit_id', (units || []).map((u) => u.id))
-
     const totalSeconds = (topics || []).reduce((sum, t) => sum + (t.time_spent_seconds || 0), 0)
     const completed = (topics || []).filter((t) => t.status === 'completed').length
-
-    // Streak from profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('current_streak')
-      .eq('id', userId)
-      .single()
-
+    const { data: profileData } = await supabase.from('profiles')
+      .select('current_streak').eq('id', userId).single()
     setStats({
       totalMinutes: Math.floor(totalSeconds / 60),
       topicsCompleted: completed,
@@ -91,49 +63,30 @@ export default function ProfilePage() {
   }
 
   const fetchActivityData = async (userId) => {
-    // Get all subjects for this user
-    const { data: subjects } = await supabase
-      .from('subjects')
-      .select('id')
-      .eq('user_id', userId)
-
+    const { data: subjects } = await supabase.from('subjects').select('id').eq('user_id', userId)
     if (!subjects?.length) return
-
-    const { data: units } = await supabase
-      .from('units')
-      .select('id')
+    const { data: units } = await supabase.from('units').select('id')
       .in('subject_id', subjects.map((s) => s.id))
-
     if (!units?.length) return
-
-    const { data: topics } = await supabase
-      .from('topics')
+    const { data: topics } = await supabase.from('topics')
       .select('time_spent_seconds, updated_at')
-      .in('unit_id', units.map((u) => u.id))
-      .gt('time_spent_seconds', 0)
-
-    // Group time by date
+      .in('unit_id', units.map((u) => u.id)).gt('time_spent_seconds', 0)
     const activity = {}
-      ; (topics || []).forEach((topic) => {
-        if (!topic.updated_at) return
-        const date = topic.updated_at.split('T')[0]
-        activity[date] = (activity[date] || 0) + (topic.time_spent_seconds || 0)
-      })
-
+    ;(topics || []).forEach((topic) => {
+      if (!topic.updated_at) return
+      const date = topic.updated_at.split('T')[0]
+      activity[date] = (activity[date] || 0) + (topic.time_spent_seconds || 0)
+    })
     setActivityData(activity)
   }
 
   const handleSaveProfile = async () => {
     if (usernameStatus === 'taken' || usernameStatus === 'checking') return
     setSaving(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: editName.trim(),
-        username: editUsername.trim().toLowerCase().replace(/\s+/g, '_') || null,
-      })
-      .eq('id', user.id)
-
+    const { error } = await supabase.from('profiles').update({
+      full_name: editName.trim(),
+      username: editUsername.trim().toLowerCase().replace(/\s+/g, '_') || null,
+    }).eq('id', user.id)
     if (!error) {
       setProfile((prev) => ({
         ...prev,
@@ -147,53 +100,23 @@ export default function ProfilePage() {
 
   const checkUsername = async (value) => {
     const cleaned = value.trim().toLowerCase().replace(/\s+/g, '_')
-
-    if (!cleaned) {
-      setUsernameStatus(null)
-      return
-    }
-    if (cleaned === profile?.username) {
-      setUsernameStatus('available')
-      return
-    }
+    if (!cleaned) { setUsernameStatus(null); return }
+    if (cleaned === profile?.username) { setUsernameStatus('available'); return }
     setUsernameStatus('checking')
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', cleaned)
-      .limit(1)
-
+    const { data } = await supabase.from('profiles').select('id').eq('username', cleaned).limit(1)
     setUsernameStatus(data?.length > 0 ? 'taken' : 'available')
   }
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-
     setUploadingAvatar(true)
-
     const filePath = `${user.id}/avatar_${Date.now()}.${file.name.split('.').pop()}`
-
     const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file, { upsert: true })
-
-    if (uploadError) {
-      console.error(uploadError)
-      setUploadingAvatar(false)
-      return
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath)
-
-    await supabase
-      .from('profiles')
-      .update({ avatar_url: publicUrl })
-      .eq('id', user.id)
-
+      .from('avatars').upload(filePath, file, { upsert: true })
+    if (uploadError) { console.error(uploadError); setUploadingAvatar(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
+    await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id)
     setAvatarUrl(publicUrl)
     setUploadingAvatar(false)
     e.target.value = ''
@@ -202,12 +125,7 @@ export default function ProfilePage() {
   const handleRemoveAvatar = async () => {
     const confirmed = window.confirm('Remove your profile photo?')
     if (!confirmed) return
-
-    await supabase
-      .from('profiles')
-      .update({ avatar_url: null })
-      .eq('id', user.id)
-
+    await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id)
     setAvatarUrl(null)
   }
 
@@ -218,16 +136,12 @@ export default function ProfilePage() {
     return m > 0 ? `${h}h ${m}m` : `${h}h`
   }
 
-  // Generate last 15 weeks of dates for the calendar
   const generateCalendarWeeks = () => {
     const weeks = []
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-
-    // Start from 15 weeks ago, on a Sunday
     const start = new Date(today)
     start.setDate(today.getDate() - (15 * 7) + (7 - today.getDay()))
-
     for (let w = 0; w < 15; w++) {
       const week = []
       for (let d = 0; d < 7; d++) {
@@ -244,11 +158,11 @@ export default function ProfilePage() {
   }
 
   const getActivityColor = (seconds) => {
-    if (seconds === 0) return 'bg-gray-100'
-    if (seconds < 600) return 'bg-green-200'   // < 10 min
-    if (seconds < 1800) return 'bg-green-400'  // < 30 min
-    if (seconds < 3600) return 'bg-green-600'  // < 1 hour
-    return 'bg-green-800'                       // 1 hour+
+    if (seconds === 0) return 'bg-gray-100 dark:bg-gray-800'
+    if (seconds < 600) return 'bg-green-200 dark:bg-green-900'
+    if (seconds < 1800) return 'bg-green-400 dark:bg-green-700'
+    if (seconds < 3600) return 'bg-green-600 dark:bg-green-500'
+    return 'bg-green-800 dark:bg-green-400'
   }
 
   const weeks = generateCalendarWeeks()
@@ -257,23 +171,19 @@ export default function ProfilePage() {
   if (loading) return null
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-6">Profile</h1>
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-6 dark:text-white">Profile</h1>
 
       {/* Profile card */}
-      <div className="bg-white border rounded-lg p-6 mb-6">
+      <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6 mb-6">
         <div className="flex items-start gap-6">
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-2xl text-gray-400">
+                <span className="text-2xl text-gray-400 dark:text-gray-500">
                   {profile?.full_name?.[0] || user?.email?.[0] || '?'}
                 </span>
               )}
@@ -286,13 +196,7 @@ export default function ProfilePage() {
             >
               {uploadingAvatar ? '...' : '+'}
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="hidden"
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             {avatarUrl && (
               <button
                 onClick={handleRemoveAvatar}
@@ -308,25 +212,19 @@ export default function ProfilePage() {
           <div className="flex-1">
             {!editing ? (
               <>
-                <p className="text-xl font-semibold">
+                <p className="text-xl font-semibold dark:text-white">
                   {profile?.full_name || user?.user_metadata?.full_name || 'No name'}
                 </p>
                 {profile?.username && (
-                  <p className="text-sm text-gray-400">@{profile.username}</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">@{profile.username}</p>
                 )}
-                <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Joined {new Date(user?.created_at).toLocaleDateString('en-IN', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{user?.email}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Joined {new Date(user?.created_at).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
                 </p>
                 <button
-                  onClick={() => {
-                    setEditing(true)
-                    setUsernameStatus(null)
-                  }}
-                  className="mt-3 text-xs border rounded px-3 py-1 hover:bg-gray-50"
+                  onClick={() => { setEditing(true); setUsernameStatus(null) }}
+                  className="mt-3 text-xs border dark:border-gray-600 rounded px-3 py-1 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
                 >
                   Edit profile
                 </button>
@@ -334,41 +232,33 @@ export default function ProfilePage() {
             ) : (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Display name</label>
+                  <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Display name</label>
                   <input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+                    className="w-full border dark:border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Username</label>
-                  <div className={`flex items-center border rounded px-3 py-2 text-sm focus-within:ring-1 ${usernameStatus === 'taken' ? 'border-red-300 focus-within:ring-red-300' :
-                      usernameStatus === 'available' ? 'border-green-300 focus-within:ring-green-300' :
-                        'focus-within:ring-black'
-                    }`}>
+                  <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Username</label>
+                  <div className={`flex items-center border rounded px-3 py-2 text-sm focus-within:ring-1 bg-white dark:bg-gray-800 ${
+                    usernameStatus === 'taken' ? 'border-red-300 focus-within:ring-red-300' :
+                    usernameStatus === 'available' ? 'border-green-300 focus-within:ring-green-300' :
+                    'dark:border-gray-600 focus-within:ring-black'
+                  }`}>
                     <span className="text-gray-400 mr-1">@</span>
                     <input
                       type="text"
                       value={editUsername}
-                      onChange={(e) => {
-                        setEditUsername(e.target.value)
-                        checkUsername(e.target.value)
-                      }}
-                      className="flex-1 focus:outline-none"
+                      onChange={(e) => { setEditUsername(e.target.value); checkUsername(e.target.value) }}
+                      className="flex-1 focus:outline-none bg-transparent dark:text-white"
                       placeholder="yourhandle"
                     />
                   </div>
-                  {usernameStatus === 'checking' && (
-                    <p className="text-xs text-gray-400 mt-1">Checking...</p>
-                  )}
-                  {usernameStatus === 'taken' && (
-                    <p className="text-xs text-red-500 mt-1">Username unavailable</p>
-                  )}
-                  {usernameStatus === 'available' && (
-                    <p className="text-xs text-green-600 mt-1">Username available ✓</p>
-                  )}
+                  {usernameStatus === 'checking' && <p className="text-xs text-gray-400 mt-1">Checking...</p>}
+                  {usernameStatus === 'taken' && <p className="text-xs text-red-500 mt-1">Username unavailable</p>}
+                  {usernameStatus === 'available' && <p className="text-xs text-green-600 mt-1">Username available ✓</p>}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -380,7 +270,7 @@ export default function ProfilePage() {
                   </button>
                   <button
                     onClick={() => setEditing(false)}
-                    className="text-xs border px-4 py-2 rounded hover:bg-gray-50"
+                    className="text-xs border dark:border-gray-600 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
                   >
                     Cancel
                   </button>
@@ -393,46 +283,37 @@ export default function ProfilePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white border rounded-lg p-4 text-center">
-          <p className="text-2xl font-semibold">{stats.subjectsCount}</p>
-          <p className="text-xs text-gray-400 mt-1">Subjects</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4 text-center">
-          <p className="text-2xl font-semibold">{stats.topicsCompleted}</p>
-          <p className="text-xs text-gray-400 mt-1">Topics done</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4 text-center">
-          <p className="text-2xl font-semibold">{formatTime(stats.totalMinutes)}</p>
-          <p className="text-xs text-gray-400 mt-1">Time studied</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4 text-center">
-          <p className="text-2xl font-semibold">{stats.streak}</p>
-          <p className="text-xs text-gray-400 mt-1">Day streak</p>
-        </div>
+        {[
+          { value: stats.subjectsCount, label: 'Subjects' },
+          { value: stats.topicsCompleted, label: 'Topics done' },
+          { value: formatTime(stats.totalMinutes), label: 'Time studied' },
+          { value: stats.streak, label: 'Day streak' },
+        ].map(({ value, label }) => (
+          <div key={label} className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4 text-center">
+            <p className="text-2xl font-semibold dark:text-white">{value}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Activity calendar */}
-      <div className="bg-white border rounded-lg p-6">
-        <p className="text-sm font-medium mb-4">Study activity</p>
+      <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6">
+        <p className="text-sm font-medium mb-4 dark:text-white">Study activity</p>
         <div className="overflow-x-auto">
           <div className="flex gap-1">
-            {/* Day labels */}
             <div className="flex flex-col gap-1 mr-1">
-              <div className="h-3" /> {/* spacer for header */}
+              <div className="h-3" />
               {dayLabels.map((day) => (
                 <div key={day} className="h-3 flex items-center">
-                  <span className="text-xs text-gray-400 w-6">{day[0]}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 w-6">{day[0]}</span>
                 </div>
               ))}
             </div>
-
-            {/* Week columns */}
             {weeks.map((week, wi) => (
               <div key={wi} className="flex flex-col gap-1">
-                {/* Month label on first day of month */}
                 <div className="h-3 flex items-center">
                   {week[0] && new Date(week[0].dateStr).getDate() <= 7 && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
                       {new Date(week[0].dateStr).toLocaleDateString('en-IN', { month: 'short' })}
                     </span>
                   )}
@@ -441,30 +322,27 @@ export default function ProfilePage() {
                   <div
                     key={day.dateStr}
                     title={
-                      day.isFuture
-                        ? ''
-                        : day.seconds > 0
-                          ? `${day.dateStr}: ${Math.floor(day.seconds / 60)} min`
-                          : `${day.dateStr}: No activity`
+                      day.isFuture ? '' :
+                      day.seconds > 0 ? `${day.dateStr}: ${Math.floor(day.seconds / 60)} min` :
+                      `${day.dateStr}: No activity`
                     }
-                    className={`w-3 h-3 rounded-sm ${day.isFuture ? 'bg-gray-50' : getActivityColor(day.seconds)
-                      }`}
+                    className={`w-3 h-3 rounded-sm ${
+                      day.isFuture ? 'bg-gray-50 dark:bg-gray-800' : getActivityColor(day.seconds)
+                    }`}
                   />
                 ))}
               </div>
             ))}
           </div>
         </div>
-
-        {/* Legend */}
         <div className="flex items-center gap-2 mt-4 justify-end">
-          <span className="text-xs text-gray-400">Less</span>
-          <div className="w-3 h-3 rounded-sm bg-gray-100" />
-          <div className="w-3 h-3 rounded-sm bg-green-200" />
-          <div className="w-3 h-3 rounded-sm bg-green-400" />
-          <div className="w-3 h-3 rounded-sm bg-green-600" />
-          <div className="w-3 h-3 rounded-sm bg-green-800" />
-          <span className="text-xs text-gray-400">More</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">Less</span>
+          <div className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-gray-800" />
+          <div className="w-3 h-3 rounded-sm bg-green-200 dark:bg-green-900" />
+          <div className="w-3 h-3 rounded-sm bg-green-400 dark:bg-green-700" />
+          <div className="w-3 h-3 rounded-sm bg-green-600 dark:bg-green-500" />
+          <div className="w-3 h-3 rounded-sm bg-green-800 dark:bg-green-400" />
+          <span className="text-xs text-gray-400 dark:text-gray-500">More</span>
         </div>
       </div>
     </main>
