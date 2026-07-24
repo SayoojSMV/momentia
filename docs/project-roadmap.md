@@ -51,13 +51,18 @@
 - [x] Friend suggestions for new users (#37)
 - [x] Topic search within subject (#38)
 
+## Phase 8 — Settings and Theming (In Progress)
+- [x] Settings page — Account details (#61)
+- [x] Settings page — Study preferences (#62)
+- [x] Settings page — Appearance (#63)
+- [x] Dark mode — full styling pass (#65)
+- [ ] Settings page — Danger zone (#64)
+
 ## Future Goals
 - [ ] Microsoft sign-in (#17, blocked — environment issue)
 - [ ] Apple sign-in (requires Apple Developer account)
 - [ ] Mobile responsiveness pass
 - [ ] Custom domain
-- [ ] Dark mode toggle
 - [ ] Real streak calculation (column exists, logic not yet implemented)
 - [ ] Notification system
 - [ ] Public landing page (logged-out)
-- [ ] Settings page (daily study minutes, preferences)

@@ -128,3 +128,31 @@ security definer bypasses the chicken-and-egg RLS problem
     http://localhost:3000/**
     https://momentia-jooyas.vercel.app/**
 - Supabase Site URL set to production URL
+
+## Dark Mode
+- Implemented using Tailwind v4 @custom-variant dark directive
+  (@custom-variant dark (&:where(.dark, .dark *)) in globals.css)
+- .dark class added to <html> element by ThemeContext when enabled
+- Toggle saved to localStorage — persists across page refreshes
+- ThemeContext.js in src/lib/ provides useTheme() hook and
+  ThemeProvider wrapper used in layout.js
+- Dark mode toggle button in sidebar footer (moon/sun icon)
+  available on every page without going to Settings
+- Settings → Appearance also has the toggle for discoverability
+- Sidebar default state (collapsed/expanded) also saved to localStorage
+  via same ThemeContext
+- Tailwind v3 darkMode: 'class' config not needed — v4 uses
+  @custom-variant instead
+
+## Settings Page
+- Account section: designation, institution, year_of_study,
+  prior_subjects (text array) — all saved to profiles table
+- Study preferences: daily_study_minutes (existing column),
+  session_length_minutes, rest_day, exam_reminder_days —
+  all saved to profiles table
+- Appearance section: dark mode toggle + sidebar default state
+  (localStorage only, no DB needed)
+- Danger zone: planned (#64) — not yet implemented
+- New columns added to profiles:
+  designation, institution, year_of_study, prior_subjects,
+  session_length_minutes, rest_day, exam_reminder_days
