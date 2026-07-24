@@ -13,14 +13,16 @@
 - Live friend name suggestions as user types in search (#36)
 - Friend suggestions for users with no friends yet (#37)
 - Topic search within subject roadmap page (#38)
-- Settings page — Account details (#61)
-- Settings page — Study preferences (#62)
-- Settings page — Appearance (dark mode + sidebar default) (#63)
+- Settings page — Account details: designation, institution,
+  year of study, prior subjects (#61)
+- Settings page — Study preferences: daily goal, session length,
+  rest day, exam reminder lead time (#62)
+- Settings page — Appearance: dark mode toggle + sidebar default (#63)
+- Dark mode — full styling pass across all pages and components,
+  toggle in sidebar footer available on every page (#65)
 
-### Planning
-- Dark mode — global theme implementation (#64)
-- Settings page — Danger zone (delete account, reset data) (#65)
-- Make adjustments to the sidebar (#66)
+### Planned
+- Settings page — Danger zone: delete account, reset data (#64)
 
 ### Fixed
 - Notification dot not clearing after reading messages
@@ -28,6 +30,8 @@
   mark-as-read to silently fail (write 0 rows with no error)
 - Schema.sql syntax error in messages table definition
 - Conflicting duplicate SELECT policies on profiles table
+- Dark mode variants not applying — fixed by adding
+  @custom-variant dark directive in globals.css (Tailwind v4 requirement)
 
 ---
 
