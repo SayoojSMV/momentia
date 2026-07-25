@@ -24,6 +24,7 @@
 
 ### Planned
 - Settings page — Danger zone: delete account, reset data (#64)
+- UI update - sidebar update for whole new look (#66)
 
 ### Fixed
 - Notification dot not clearing after reading messages
