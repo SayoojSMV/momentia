@@ -20,6 +20,7 @@
 - Settings page — Appearance: dark mode toggle + sidebar default (#63)
 - Dark mode — full styling pass across all pages and components,
   toggle in sidebar footer available on every page (#65)
+- Add responsive sidebar — hidden on mobile with hamburger drawer (#72)
 
 ### Planned
 - Settings page — Danger zone: delete account, reset data (#64)

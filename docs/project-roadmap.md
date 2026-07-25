@@ -57,6 +57,7 @@
 - [x] Settings page — Appearance (#63)
 - [x] Dark mode — full styling pass (#65)
 - [ ] Settings page — Danger zone (#64)
+- [x] Responsive Sidevar - Improvement for phone window size (#72)
 
 ## Future Goals
 - [ ] Microsoft sign-in (#17, blocked — environment issue)
