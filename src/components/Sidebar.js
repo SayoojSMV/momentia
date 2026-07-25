@@ -17,11 +17,7 @@ const navItems = [
 export default function Sidebar() {
   const { sidebarDefault, darkMode, toggleDarkMode } = useTheme()
   const [expanded, setExpanded] = useState(false)
-
-  useEffect(() => {
-    if (sidebarDefault === 'expanded') setExpanded(true)
-  }, [sidebarDefault])
-
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [subjects, setSubjects] = useState([])
   const [showSubjects, setShowSubjects] = useState(false)
   const [user, setUser] = useState(null)
@@ -30,69 +26,49 @@ export default function Sidebar() {
   const pathname = usePathname()
 
   useEffect(() => {
+    if (sidebarDefault === 'expanded') setExpanded(true)
+  }, [sidebarDefault])
+
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
       setUser(session.user)
-
       supabase
         .from('subjects')
         .select('id, name, category')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: true })
-        .then(({ data }) => {
-          if (data) setSubjects(data)
-        })
+        .then(({ data }) => { if (data) setSubjects(data) })
     })
   }, [])
 
   useEffect(() => {
     if (!user) return
-
     const checkUnread = async () => {
       const { data } = await supabase
-        .from('messages')
-        .select('id')
-        .eq('receiver_id', user.id)
-        .eq('is_read', false)
-        .limit(1)
-
+        .from('messages').select('id')
+        .eq('receiver_id', user.id).eq('is_read', false).limit(1)
       setHasUnread(data?.length > 0)
     }
-
     checkUnread()
-
     const channel = supabase
       .channel(`sidebar-unread-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`,
-        },
-        () => checkUnread()
-      )
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'messages',
+        filter: `receiver_id=eq.${user.id}`,
+      }, () => checkUnread())
       .subscribe()
-
     return () => supabase.removeChannel(channel)
   }, [user])
 
-  // Re-check unread on pathname change
   useEffect(() => {
     if (!user) return
-
     const checkUnread = async () => {
       const { data } = await supabase
-        .from('messages')
-        .select('id')
-        .eq('receiver_id', user.id)
-        .eq('is_read', false)
-        .limit(1)
-
+        .from('messages').select('id')
+        .eq('receiver_id', user.id).eq('is_read', false).limit(1)
       setHasUnread(data?.length > 0)
     }
-
     if (pathname === '/friends') {
       const timer = setTimeout(checkUnread, 1500)
       return () => clearTimeout(timer)
@@ -101,6 +77,11 @@ export default function Sidebar() {
     }
   }, [user, pathname])
 
+  // Close mobile drawer on navigation
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.replace('/login')
@@ -108,132 +89,220 @@ export default function Sidebar() {
 
   if (pathname === '/login' || pathname?.startsWith('/auth')) return null
 
+  // Shared nav content used in both desktop sidebar and mobile drawer
+  const NavContent = ({ onNavigate }) => (
+    <>
+      <nav className="flex-1 overflow-y-auto py-2">
+        {navItems.map((item) => {
+          const active = pathname === item.href
+          const showDot = item.href === '/friends' && hasUnread
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                active
+                  ? 'text-black dark:text-white font-medium bg-gray-50 dark:bg-gray-800'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}
+            >
+              <span className="text-base flex-shrink-0 relative">
+                {item.icon}
+                {showDot && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </span>
+              <span className="truncate">{item.label}</span>
+            </Link>
+          )
+        })}
+
+        {/* Subjects section */}
+        <div className="mt-2">
+          <button
+            onClick={() => setShowSubjects((prev) => !prev)}
+            className="flex items-center w-full h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            <span className="text-base flex-shrink-0">📚</span>
+            <span className="flex-1 text-left truncate">Subjects</span>
+            <span className="text-xs">{showSubjects ? '▲' : '▼'}</span>
+          </button>
+          {showSubjects && (
+            <div className="pl-4 pb-2">
+              {subjects.length === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-gray-500 px-4 py-2">No subjects yet</p>
+              ) : (
+                subjects.map((subject) => (
+                  <Link
+                    key={subject.id}
+                    href={`/subject/${subject.id}`}
+                    onClick={onNavigate}
+                    className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                      pathname === `/subject/${subject.id}`
+                        ? 'text-black dark:text-white font-medium'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
+                    <span className="truncate">{subject.name}</span>
+                  </Link>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      </nav>
+
+      <div className="border-t dark:border-gray-700 py-2">
+        <button
+          onClick={toggleDarkMode}
+          className="flex items-center h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 w-full"
+        >
+          <span className="text-base flex-shrink-0">{darkMode ? '☀️' : '🌙'}</span>
+          <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 w-full"
+        >
+          <span className="text-base flex-shrink-0">🚪</span>
+          <span>Sign out</span>
+        </button>
+      </div>
+    </>
+  )
+
   return (
     <>
-      <aside
-        className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-900 border-r dark:border-gray-700 z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-14'
-          }`}
-      >
+      {/* ── DESKTOP SIDEBAR (md and above) ── */}
+      <aside className={`hidden md:flex fixed top-0 left-0 h-full bg-white dark:bg-gray-900 border-r dark:border-gray-700 z-40 flex-col transition-all duration-200 ${
+        expanded ? 'w-56' : 'w-14'
+      }`}>
+        {/* Hamburger / brand */}
         <button
           onClick={() => setExpanded((prev) => !prev)}
           className="h-14 flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white flex-shrink-0 border-b dark:border-gray-700 w-full px-4 gap-3"
           title={expanded ? 'Collapse' : 'Expand'}
         >
           <span className="text-lg flex-shrink-0">☰</span>
-          {expanded && (
-            <span className="text-sm font-semibold dark:text-white">Momentia</span>
-          )}
+          {expanded && <span className="text-sm font-semibold dark:text-white">Momentia</span>}
         </button>
 
-        <nav className="flex-1 overflow-y-auto py-2">
-          {navItems.map((item) => {
-            const active = pathname === item.href
-            const showDot = item.href === '/friends' && hasUnread
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setExpanded(false)}
-                className={`flex items-center h-11 px-4 gap-3 text-sm transition hover:bg-gray-50 dark:hover:bg-gray-800 ${active
-                    ? 'text-black dark:text-white font-medium bg-gray-50 dark:bg-gray-800'
-                    : 'text-gray-500 dark:text-gray-400'
-                  }`}
-                title={!expanded ? item.label : undefined}
-              >
-                <span className="text-base flex-shrink-0 relative">
-                  {item.icon}
-                  {showDot && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-                  )}
-                </span>
-                {expanded && <span className="truncate">{item.label}</span>}
-              </Link>
-            )
-          })}
-
-          {expanded && (
-            <div className="mt-2">
+        {expanded ? (
+          <NavContent onNavigate={() => setExpanded(false)} />
+        ) : (
+          /* Collapsed — icons only */
+          <>
+            <nav className="flex-1 overflow-y-auto py-2">
+              {navItems.map((item) => {
+                const active = pathname === item.href
+                const showDot = item.href === '/friends' && hasUnread
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center justify-center h-11 px-4 text-sm transition hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                      active
+                        ? 'text-black dark:text-white bg-gray-50 dark:bg-gray-800'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                    title={item.label}
+                  >
+                    <span className="text-base relative">
+                      {item.icon}
+                      {showDot && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                      )}
+                    </span>
+                  </Link>
+                )
+              })}
               <button
-                onClick={() => setShowSubjects((prev) => !prev)}
-                className="flex items-center w-full h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="flex items-center justify-center w-full h-11 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                title="Subjects"
+                onClick={() => setExpanded(true)}
               >
-                <span className="text-base flex-shrink-0">📚</span>
-                <span className="flex-1 text-left truncate">Subjects</span>
-                <span className="text-xs">{showSubjects ? '▲' : '▼'}</span>
+                <span className="text-base">📚</span>
               </button>
-              {showSubjects && (
-                <div className="pl-4 pb-2">
-                  {subjects.length === 0 ? (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 px-4 py-2">
-                      No subjects yet
-                    </p>
-                  ) : (
-                    subjects.map((subject) => (
-                      <Link
-                        key={subject.id}
-                        href={`/subject/${subject.id}`}
-                        onClick={() => setExpanded(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-xs rounded hover:bg-gray-50 dark:hover:bg-gray-800 ${pathname === `/subject/${subject.id}`
-                            ? 'text-black dark:text-white font-medium'
-                            : 'text-gray-500 dark:text-gray-400'
-                          }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
-                        <span className="truncate">{subject.name}</span>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              )}
+            </nav>
+            <div className="border-t dark:border-gray-700 py-2">
+              <button
+                onClick={toggleDarkMode}
+                className="flex items-center justify-center w-full h-11 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                title={darkMode ? 'Light mode' : 'Dark mode'}
+              >
+                <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center justify-center w-full h-11 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                title="Sign out"
+              >
+                <span className="text-base">🚪</span>
+              </button>
             </div>
-          )}
-
-          {!expanded && (
-            <button
-              className="flex items-center justify-center w-full h-11 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-              title="Subjects"
-              onClick={() => setExpanded(true)}
-            >
-              <span className="text-base">📚</span>
-            </button>
-          )}
-        </nav>
-
-        <div className="border-t dark:border-gray-700 py-2">
-          {/* Dark mode toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className="flex items-center h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 w-full"
-            title={!expanded ? (darkMode ? 'Light mode' : 'Dark mode') : undefined}
-          >
-            <span className="text-base flex-shrink-0">
-              {darkMode ? '☀️' : '🌙'}
-            </span>
-            {expanded && (
-              <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>
-            )}
-          </button>
-
-          {/* Sign out */}
-          <button
-            onClick={handleSignOut}
-            className="flex items-center h-11 px-4 gap-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 w-full"
-            title={!expanded ? 'Sign out' : undefined}
-          >
-            <span className="text-base flex-shrink-0">🚪</span>
-            {expanded && <span>Sign out</span>}
-          </button>
-        </div>
+          </>
+        )}
       </aside>
 
+      {/* Overlay when desktop sidebar is expanded */}
       {expanded && (
-        <div
-          className="fixed inset-0 z-20"
-          onClick={() => setExpanded(false)}
-        />
+        <div className="hidden md:block fixed inset-0 z-30" onClick={() => setExpanded(false)} />
       )}
 
-      <div className="w-14 flex-shrink-0" />
+      {/* Desktop spacer */}
+      <div className="hidden md:block w-14 flex-shrink-0" />
+
+      {/* ── MOBILE TOP BAR (below md) ── */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white dark:bg-gray-900 border-b dark:border-gray-700 z-40 flex items-center justify-between px-4">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white text-xl"
+        >
+          ☰
+        </button>
+        <span className="text-sm font-semibold dark:text-white">Momentia</span>
+        <div className="flex items-center gap-3">
+          {hasUnread && (
+            <span className="w-2 h-2 bg-red-500 rounded-full" />
+          )}
+          <button
+            onClick={toggleDarkMode}
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white text-base"
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile top bar spacer */}
+      <div className="md:hidden h-14 flex-shrink-0" />
+
+      {/* ── MOBILE DRAWER ── */}
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-50"
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Drawer panel */}
+          <div className="md:hidden fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-900 border-r dark:border-gray-700 z-50 flex flex-col">
+            {/* Drawer header */}
+            <div className="h-14 flex items-center justify-between px-4 border-b dark:border-gray-700 flex-shrink-0">
+              <span className="text-sm font-semibold dark:text-white">Momentia</span>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white text-lg"
+              >
+                ✕
+              </button>
+            </div>
+            <NavContent onNavigate={() => setMobileOpen(false)} />
+          </div>
+        </>
+      )}
     </>
   )
 }
