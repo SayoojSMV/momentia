@@ -3,6 +3,8 @@
 import { use, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function TopicPage({ params }) {
   const { id, topicId } = use(params)
@@ -219,7 +221,19 @@ export default function TopicPage({ params }) {
         {generatingContent ? (
           <p className="text-gray-400 dark:text-gray-500 text-sm">Generating study content...</p>
         ) : content ? (
-          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{content}</p>
+          <div className="prose prose-sm dark:prose-invert max-w-none
+            prose-headings:font-semibold
+            prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
+            prose-code:bg-gray-100 prose-code:dark:bg-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+            prose-pre:bg-gray-100 prose-pre:dark:bg-gray-800 prose-pre:rounded-lg prose-pre:p-4
+            prose-table:border-collapse prose-th:border prose-th:border-gray-300 prose-th:dark:border-gray-600 prose-th:px-3 prose-th:py-2 prose-th:bg-gray-50 prose-th:dark:bg-gray-800
+            prose-td:border prose-td:border-gray-300 prose-td:dark:border-gray-600 prose-td:px-3 prose-td:py-2
+            prose-a:text-blue-600 prose-a:dark:text-blue-400
+            prose-blockquote:border-l-gray-300 prose-blockquote:dark:border-l-gray-600">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {content}
+            </ReactMarkdown>
+          </div>
         ) : (
           <p className="text-gray-400 dark:text-gray-500 text-sm">Could not generate content. Try refreshing.</p>
         )}

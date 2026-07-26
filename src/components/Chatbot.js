@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false)
@@ -99,7 +101,25 @@ export default function Chatbot() {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === 'user' ? (
+                    msg.content
+                  ) : (
+                    <div className="prose prose-sm dark:prose-invert max-w-none
+                      prose-p:my-1 prose-p:leading-relaxed
+                      prose-headings:font-semibold prose-headings:my-2
+                      prose-code:bg-gray-200 prose-code:dark:bg-gray-700 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+                      prose-pre:bg-gray-200 prose-pre:dark:bg-gray-700 prose-pre:rounded prose-pre:p-2 prose-pre:text-xs
+                      prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5
+                      prose-table:text-xs prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1
+                      prose-th:border prose-th:border-gray-300 prose-th:dark:border-gray-600
+                      prose-td:border prose-td:border-gray-300 prose-td:dark:border-gray-600
+                      prose-strong:font-semibold
+                      prose-a:text-blue-600 prose-a:dark:text-blue-400">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
