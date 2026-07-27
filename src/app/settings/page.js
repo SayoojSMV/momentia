@@ -24,6 +24,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const router = useRouter()
   const { darkMode, toggleDarkMode, sidebarDefault, setSidebarDefault } = useTheme()
 
@@ -79,6 +81,28 @@ export default function SettingsPage() {
     }).eq('id', user.id)
     setSaving(false)
     if (!error) { setSaved(true); setTimeout(() => setSaved(false), 3000) }
+  }
+
+  const handleResetStudyData = async () => {
+    setResetting(true)
+
+    // Delete all subjects — units, topics, materials, schedule cascade automatically
+    await supabase
+      .from('subjects')
+      .delete()
+      .eq('user_id', user.id)
+
+    // Also clear the schedule directly in case any orphaned rows exist
+    await supabase
+      .from('schedule')
+      .delete()
+      .eq('user_id', user.id)
+
+    setResetting(false)
+    setShowResetModal(false)
+
+    // Redirect to dashboard so the now-empty state is immediately visible
+    router.push('/')
   }
 
   if (loading) return null
@@ -322,7 +346,7 @@ export default function SettingsPage() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className={`w-full py-3 rounded-lg text-sm font-medium transition ${
+        className={`w-full py-3 rounded-lg text-sm font-medium transition mb-8 ${
           saving
             ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
             : saved
@@ -332,6 +356,91 @@ export default function SettingsPage() {
       >
         {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save settings'}
       </button>
+
+      {/* Danger zone */}
+      <section className="border border-red-200 dark:border-red-900 rounded-lg p-6">
+        <h2 className="text-base font-semibold text-red-600 dark:text-red-400 mb-1">
+          Danger zone
+        </h2>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+          These actions are irreversible. Proceed with caution.
+        </p>
+
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium dark:text-white">Reset study data</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              Deletes all subjects, units, topics, materials, and your
+              timetable. Your account, profile, and friends are kept.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowResetModal(true)}
+            className="flex-shrink-0 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+          >
+            Reset data
+          </button>
+        </div>
+      </section>
+
+      {/* Reset confirmation modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-2xl">⚠️</span>
+              <h3 className="text-lg font-semibold dark:text-white">Reset study data?</h3>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              This will permanently delete:
+            </p>
+            <ul className="text-sm text-gray-600 dark:text-gray-400 mb-4 space-y-1 pl-4">
+              <li>• All subjects and their details</li>
+              <li>• All units and topics</li>
+              <li>• All uploaded study materials</li>
+              <li>• Your generated timetable</li>
+              <li>• All study progress and time records</li>
+            </ul>
+
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+              Your account, profile, and friends will not be affected.
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowResetModal(false)}
+                disabled={resetting}
+                className="px-4 py-2 text-sm border dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <ResetButton onConfirm={handleResetStudyData} resetting={resetting} />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
+  )
+}
+
+function ResetButton({ onConfirm, resetting }) {
+  const [countdown, setCountdown] = useState(5)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (countdown === 0) { setReady(true); return }
+    const t = setTimeout(() => setCountdown((prev) => prev - 1), 1000)
+    return () => clearTimeout(t)
+  }, [countdown])
+
+  return (
+    <button
+      onClick={onConfirm}
+      disabled={!ready || resetting}
+      className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+    >
+      {resetting ? 'Resetting...' : ready ? 'Yes, reset everything' : `Wait ${countdown}s...`}
+    </button>
   )
 }
