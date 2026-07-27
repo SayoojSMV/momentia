@@ -58,6 +58,14 @@
 - [x] Dark mode — full styling pass (#65)
 - [ ] Settings page — Danger zone (#64)
 
+## Phase 9 — Polish and Responsiveness (In Progress)
+- [x] Responsive sidebar — mobile drawer (#72)
+- [x] Markdown rendering in topic content and chatbot
+- [ ] Settings page — Danger zone (#64)
+- [ ] Public landing page (logged-out)
+- [ ] Real streak calculation
+- [ ] Notification system
+
 ## Future Goals
 - [ ] Microsoft sign-in (#17, blocked — environment issue)
 - [ ] Apple sign-in (requires Apple Developer account)

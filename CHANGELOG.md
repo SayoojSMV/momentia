@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.0 — Polish and Responsiveness
+### Added
+- Responsive sidebar — hidden on mobile, replaced by fixed top bar
+  with hamburger button that opens a full-width drawer overlay (#72)
+- Markdown rendering in topic study pages — headers, code blocks,
+  tables, lists all render properly instead of raw symbols
+- Markdown rendering in AI chatbot — same formatting support with
+  tighter spacing for the narrow chat bubble width
+- react-markdown + remark-gfm for GitHub Flavored Markdown support
+- @tailwindcss/typography for prose styling
+
+---
+
 ## v0.2.0 — Improvements ✅
 ### Added
 - Real data on dashboard stat tiles and subject card completion (#28)
