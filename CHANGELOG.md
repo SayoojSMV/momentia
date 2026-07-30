@@ -34,9 +34,9 @@
 - Dark mode — full styling pass across all pages and components,
   toggle in sidebar footer available on every page (#65)
 - Add responsive sidebar — hidden on mobile with hamburger drawer (#72)
+- Settings page — Danger zone: delete account, reset data (#64)
 
 ### Planned
-- Settings page — Danger zone: delete account, reset data (#64)
 
 ### Fixed
 - Notification dot not clearing after reading messages

@@ -51,18 +51,18 @@
 - [x] Friend suggestions for new users (#37)
 - [x] Topic search within subject (#38)
 
-## Phase 8 — Settings and Theming (In Progress)
+## Phase 8 — Settings and Theming ✅
 - [x] Settings page — Account details (#61)
 - [x] Settings page — Study preferences (#62)
 - [x] Settings page — Appearance (#63)
 - [x] Dark mode — full styling pass (#65)
-- [ ] Settings page — Danger zone (#64)
+- [x] Settings page — Danger zone (#64)
 - [x] Responsive Sidevar - Improvement for phone window size (#72)
 
 ## Phase 9 — Polish and Responsiveness (In Progress)
 - [x] Responsive sidebar — mobile drawer (#72)
 - [x] Markdown rendering in topic content and chatbot
-- [ ] Settings page — Danger zone (#64)
+- [x] Settings page — Danger zone (#64)
 - [ ] Public landing page (logged-out)
 - [ ] Real streak calculation
 - [ ] Notification system
