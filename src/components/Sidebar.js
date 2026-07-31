@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTheme } from '@/lib/ThemeContext'
 import Link from 'next/link'
+import NotificationBell from './NotificationBell'
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: '⊞' },
@@ -225,14 +226,19 @@ export default function Sidebar() {
       {/* ── DESKTOP SIDEBAR (md and above) ── */}
       <aside className={`hidden md:flex fixed top-0 left-0 h-full bg-white dark:bg-gray-900 border-r dark:border-gray-700 z-40 flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-14'
         }`}>
-        <button
-          onClick={() => setExpanded((prev) => !prev)}
-          className="h-14 flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white flex-shrink-0 border-b dark:border-gray-700 w-full px-4 gap-3"
-          title={expanded ? 'Collapse' : 'Expand'}
-        >
-          <span className="text-lg flex-shrink-0">☰</span>
-          {expanded && <span className="text-sm font-semibold dark:text-white">Momentia</span>}
-        </button>
+        <div className="h-14 flex items-center justify-between border-b dark:border-gray-700 w-full px-4 flex-shrink-0">
+          <button
+            onClick={() => setExpanded((prev) => !prev)}
+            className="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white gap-3"
+            title={expanded ? 'Collapse' : 'Expand'}
+          >
+            <span className="text-lg flex-shrink-0">☰</span>
+            {expanded && <span className="text-sm font-semibold dark:text-white">Momentia</span>}
+          </button>
+          
+          {/* Notification Bell in expanded desktop header */}
+          {expanded && <NotificationBell />}
+        </div>
 
         {expanded ? (
           <NavContent onNavigate={() => setMobileOpen(false)} items={navItems} />
@@ -269,7 +275,11 @@ export default function Sidebar() {
                 <span className="text-base">📚</span>
               </button>
             </nav>
-            <div className="border-t dark:border-gray-700 py-2">
+            <div className="border-t dark:border-gray-700 py-2 flex flex-col items-center">
+              {/* Notification Bell in collapsed desktop bottom navigation */}
+              <div className="flex items-center justify-center w-full h-11">
+                <NotificationBell />
+              </div>
               <button
                 onClick={toggleDarkMode}
                 className="flex items-center justify-center w-full h-11 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -308,8 +318,11 @@ export default function Sidebar() {
         {/* Brand */}
         <span className="text-sm font-semibold dark:text-white">Momentia</span>
 
-        {/* Right side — unread dot + profile menu */}
-        <div className="flex items-center gap-2" ref={profileMenuRef}>
+        {/* Right side — unread dot + Notification Bell + profile menu */}
+        <div className="flex items-center gap-3" ref={profileMenuRef}>
+          {/* Notification Bell on Mobile */}
+          <NotificationBell />
+
           {/* Unread message dot */}
           {hasUnread && (
             <span className="w-2 h-2 bg-red-500 rounded-full" />
