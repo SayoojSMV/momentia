@@ -63,6 +63,7 @@
 - [x] Responsive sidebar — mobile drawer (#72)
 - [x] Markdown rendering in topic content and chatbot
 - [x] Settings page — Danger zone (#64)
+- [x] Global mobile layout alignment (top padding fix)
 - [ ] Public landing page (logged-out)
 - [ ] Real streak calculation
 - [ ] Notification system

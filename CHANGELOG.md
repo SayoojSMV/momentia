@@ -11,6 +11,9 @@
 - react-markdown + remark-gfm for GitHub Flavored Markdown support
 - @tailwindcss/typography for prose styling
 
+### Fixed
+- Global mobile layout alignment — applied global top padding (`pt-16 md:pt-0`) in RootLayout (`src/app/layout.js`) to prevent top navigation bar from obscuring page content on mobile screens
+
 ---
 
 ## v0.2.0 — Improvements ✅
