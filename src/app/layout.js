@@ -25,9 +25,10 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex">
         <ThemeProvider>
           <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0">
+          {/* Added pt-16 for mobile top bar clearance; resets to md:pt-0 on desktop */}
+          <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden pt-16 md:pt-0">
             {children}
-          </div>
+          </main>
           <Chatbot />
         </ThemeProvider>
       </body>
