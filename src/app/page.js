@@ -137,7 +137,7 @@ export default function Dashboard() {
   const quote = motivationalQuotes[dayOfYear % motivationalQuotes.length]
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 px-6 pb-6 pt-20 md:p-6">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
       {/* Greeting banner */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold dark:text-white">
