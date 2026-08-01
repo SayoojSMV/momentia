@@ -159,48 +159,50 @@ export default function TopicPage({ params }) {
   if (loading) return null
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 max-w-2xl mx-auto">
+    <div className="w-full space-y-6">
       {/* Back button */}
-      <button
-        onClick={() => router.push(`/subject/${id}`)}
-        className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white mb-4 inline-block"
-      >
-        ← Back to subject
-      </button>
+      <div>
+        <button
+          onClick={() => router.push(`/subject/${id}`)}
+          className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white inline-flex items-center gap-1 transition"
+        >
+          ← Back to subject
+        </button>
+      </div>
 
-      {/* Topic header with compact timer */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex-1">
-          <span className={`text-xs px-2 py-1 rounded-full ${
+      {/* Topic Header & Timer */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b dark:border-gray-800">
+        <div className="space-y-1.5">
+          <span className={`inline-block text-[11px] font-medium tracking-wide uppercase px-2.5 py-0.5 rounded-md ${
             topic.difficulty === 'easy'
-              ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50'
               : topic.difficulty === 'medium'
-              ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-              : 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900'
+              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50'
+              : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50'
           }`}>
             {topic.difficulty}
           </span>
-          <h1 className="text-2xl font-semibold mt-2 dark:text-white">{topic.name}</h1>
+          <h1 className="text-2xl font-semibold dark:text-white">{topic.name}</h1>
         </div>
 
-        {/* Compact timer */}
-        <div className="flex flex-col items-end gap-2 ml-4 flex-shrink-0">
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+        {/* Compact Timer */}
+        <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-start gap-2">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition ${
             completed
-              ? 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+              ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300'
               : paused
-              ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
-              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+              ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-300'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white'
           }`}>
-            <span className="font-mono text-lg font-semibold dark:text-white">
+            <span className="font-mono text-base font-semibold">
               {formatTime(seconds)}
             </span>
             {completed ? (
-              <span className="text-xs text-green-600">✓</span>
+              <span className="text-xs font-semibold">✓</span>
             ) : (
               <button
                 onClick={() => setPaused((prev) => !prev)}
-                className="text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 ml-1"
+                className="text-xs text-gray-400 hover:text-black dark:hover:text-white ml-1 transition"
                 title={paused ? 'Resume timer' : 'Pause timer'}
               >
                 {paused ? '▶' : '⏸'}
@@ -208,73 +210,87 @@ export default function TopicPage({ params }) {
             )}
           </div>
           {!completed && (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              {paused ? 'Paused' : 'Timer running'}
-            </p>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500">
+              {paused ? 'Timer paused' : 'Timer active'}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6 mb-6">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Study content</p>
+      {/* Content Card */}
+      <section className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-6">
+        <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">
+          Study Content
+        </h2>
+
         {generatingContent ? (
-          <p className="text-gray-400 dark:text-gray-500 text-sm">Generating study content...</p>
+          <div className="py-12 text-center space-y-2">
+            <div className="inline-block animate-spin text-gray-400">⏳</div>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Generating structured study content for this topic...</p>
+          </div>
         ) : content ? (
           <div className="prose prose-sm dark:prose-invert max-w-none
             prose-headings:font-semibold
             prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
-            prose-code:bg-gray-100 prose-code:dark:bg-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
-            prose-pre:bg-gray-100 prose-pre:dark:bg-gray-800 prose-pre:rounded-lg prose-pre:p-4
-            prose-table:border-collapse prose-th:border prose-th:border-gray-300 prose-th:dark:border-gray-600 prose-th:px-3 prose-th:py-2 prose-th:bg-gray-50 prose-th:dark:bg-gray-800
-            prose-td:border prose-td:border-gray-300 prose-td:dark:border-gray-600 prose-td:px-3 prose-td:py-2
-            prose-a:text-blue-600 prose-a:dark:text-blue-400
-            prose-blockquote:border-l-gray-300 prose-blockquote:dark:border-l-gray-600">
+            prose-code:bg-gray-100 prose-code:dark:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+            prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950 prose-pre:text-gray-100 prose-pre:rounded-xl prose-pre:p-4
+            prose-table:border-collapse prose-th:border prose-th:border-gray-200 prose-th:dark:border-gray-800 prose-th:px-3 prose-th:py-2 prose-th:bg-gray-50 prose-th:dark:bg-gray-800/50
+            prose-td:border prose-td:border-gray-200 prose-td:dark:border-gray-800 prose-td:px-3 prose-td:py-2
+            prose-a:text-black dark:prose-a:text-white prose-a:underline
+            prose-blockquote:border-l-black dark:prose-blockquote:border-l-white">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {content}
             </ReactMarkdown>
           </div>
         ) : (
-          <p className="text-gray-400 dark:text-gray-500 text-sm">Could not generate content. Try refreshing.</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 py-4">
+            Could not load or generate content. Please try refreshing the page.
+          </p>
+        )}
+      </section>
+
+      {/* Footer Actions */}
+      <div className="pt-2">
+        {!completed ? (
+          <button
+            onClick={handleMarkComplete}
+            className="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl text-sm font-medium hover:opacity-90 transition"
+          >
+            Mark as complete
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="w-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 py-3 rounded-xl text-sm font-medium text-center">
+              ✓ Topic completed
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              {nextTopic ? (
+                <button
+                  onClick={() => router.push(`/subject/${id}/topic/${nextTopic.id}`)}
+                  className="flex-1 bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl text-sm font-medium hover:opacity-90 transition"
+                >
+                  Next topic: {nextTopic.name} →
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push(`/subject/${id}`)}
+                  className="flex-1 bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl text-sm font-medium hover:opacity-90 transition"
+                >
+                  ← Return to subject
+                </button>
+              )}
+
+              <button
+                onClick={handleMarkIncomplete}
+                className="px-4 py-3 border dark:border-gray-800 rounded-xl text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                Mark as incomplete
+              </button>
+            </div>
+          </div>
         )}
       </div>
-
-      {/* Actions */}
-      {!completed ? (
-        <button
-          onClick={handleMarkComplete}
-          className="w-full bg-black text-white py-3 rounded-lg text-sm font-medium hover:bg-gray-800"
-        >
-          Mark as complete
-        </button>
-      ) : (
-        <div className="space-y-3">
-          <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-3 rounded-lg text-sm font-medium text-center">
-            ✓ Topic completed
-          </div>
-          <button
-            onClick={handleMarkIncomplete}
-            className="w-full border dark:border-gray-600 border-gray-300 py-2 rounded-lg text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
-            Mark as incomplete
-          </button>
-          {nextTopic ? (
-            <button
-              onClick={() => router.push(`/subject/${id}/topic/${nextTopic.id}`)}
-              className="w-full border dark:border-gray-600 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
-            >
-              Next: {nextTopic.name} →
-            </button>
-          ) : (
-            <button
-              onClick={() => router.push(`/subject/${id}`)}
-              className="w-full border dark:border-gray-600 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
-            >
-              ← Back to subject
-            </button>
-          )}
-        </div>
-      )}
-    </main>
+    </div>
   )
 }

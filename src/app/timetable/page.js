@@ -70,8 +70,9 @@ export default function TimetablePage() {
   if (loading) return null
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 max-w-3xl mx-auto">
-      <div className="mb-6">
+    <div className="w-full space-y-6">
+      {/* Page Header */}
+      <div>
         <h1 className="text-2xl font-semibold dark:text-white">Timetable</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
           AI-scheduled study sessions based on your subjects and deadlines
@@ -79,14 +80,14 @@ export default function TimetablePage() {
       </div>
 
       {/* Generator controls */}
-      <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4 mb-6">
+      <div className="w-full bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-6">
         <p className="text-sm font-medium mb-3 dark:text-white">Generate timetable</p>
         <div className="flex items-center gap-4 mb-3">
           <label className="text-sm text-gray-600 dark:text-gray-400">Daily study time</label>
           <select
             value={minutesPerDay}
             onChange={(e) => setMinutesPerDay(Number(e.target.value))}
-            className="border dark:border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
+            className="border dark:border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white"
           >
             <option value={60}>1 hour</option>
             <option value={90}>1.5 hours</option>
@@ -99,10 +100,10 @@ export default function TimetablePage() {
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className={`w-full py-2 rounded-lg text-sm font-medium transition ${
+          className={`w-full py-2.5 rounded-lg text-sm font-medium transition ${
             generating
               ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-              : 'bg-black text-white hover:bg-gray-800'
+              : 'bg-black dark:bg-white dark:text-black text-white hover:opacity-90'
           }`}
         >
           {generating ? 'Generating...' : '✨ Generate timetable'}
@@ -110,24 +111,24 @@ export default function TimetablePage() {
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </div>
 
-      {/* Schedule */}
+      {/* Schedule list */}
       {Object.keys(groupedByDate).length === 0 ? (
         <p className="text-gray-400 dark:text-gray-500 text-sm">
           No schedule yet — generate one above.
         </p>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
           {Object.entries(groupedByDate).map(([date, sessions]) => (
-            <div key={date}>
+            <div key={date} className="w-full">
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 {formatDate(date)}
               </p>
-              <div className="space-y-2">
+              <div className="space-y-2 w-full">
                 {sessions.map((session) => (
                   <div
                     key={session.id}
                     onClick={() => router.push(`/subject/${session.subject_id}/topic/${session.topic_id}`)}
-                    className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:shadow-sm dark:hover:bg-gray-800 transition"
+                    className="w-full bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl px-5 py-4 flex items-center justify-between cursor-pointer hover:border-gray-300 dark:hover:border-gray-700 transition"
                   >
                     <div>
                       <p className="text-sm font-medium dark:text-white">
@@ -152,6 +153,6 @@ export default function TimetablePage() {
           ))}
         </div>
       )}
-    </main>
+    </div>
   )
 }

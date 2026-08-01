@@ -22,12 +22,15 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex">
+      <body className="min-h-full flex flex-col bg-gray-50 dark:bg-gray-950">
         <ThemeProvider>
           <Sidebar />
-          {/* Added pt-16 for mobile top bar clearance; resets to md:pt-0 on desktop */}
-          <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden pt-16 md:pt-0">
-            {children}
+          {/* Main stretches full width with theme background and header offset */}
+          <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden pt-14 bg-gray-50 dark:bg-gray-950">
+            {/* Centered container with fixed max-width and edge padding */}
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col">
+              {children}
+            </div>
           </main>
           <Chatbot />
         </ThemeProvider>

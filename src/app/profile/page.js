@@ -171,11 +171,17 @@ export default function ProfilePage() {
   if (loading) return null
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-6 dark:text-white">Profile</h1>
+    <div className="w-full space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-semibold dark:text-white">Profile</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          Manage your personal account, review study metrics, and track activity
+        </p>
+      </div>
 
       {/* Profile card */}
-      <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6 mb-6">
+      <div className="w-full bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-6">
         <div className="flex items-start gap-6">
           {/* Avatar */}
           <div className="relative flex-shrink-0">
@@ -191,7 +197,7 @@ export default function ProfilePage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
-              className="absolute bottom-0 right-0 w-6 h-6 bg-black text-white rounded-full text-xs flex items-center justify-center hover:bg-gray-800"
+              className="absolute bottom-0 right-0 w-6 h-6 bg-black text-white dark:bg-white dark:text-black rounded-full text-xs flex items-center justify-center hover:opacity-90 transition"
               title="Change photo"
             >
               {uploadingAvatar ? '...' : '+'}
@@ -200,7 +206,7 @@ export default function ProfilePage() {
             {avatarUrl && (
               <button
                 onClick={handleRemoveAvatar}
-                className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"
+                className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600 transition"
                 title="Remove photo"
               >
                 ✕
@@ -224,7 +230,7 @@ export default function ProfilePage() {
                 </p>
                 <button
                   onClick={() => { setEditing(true); setUsernameStatus(null) }}
-                  className="mt-3 text-xs border dark:border-gray-600 rounded px-3 py-1 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
+                  className="mt-3 text-xs border dark:border-gray-700 rounded-md px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 transition"
                 >
                   Edit profile
                 </button>
@@ -237,15 +243,15 @@ export default function ProfilePage() {
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full border dark:border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
+                    className="w-full border dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Username</label>
-                  <div className={`flex items-center border rounded px-3 py-2 text-sm focus-within:ring-1 bg-white dark:bg-gray-800 ${
+                  <div className={`flex items-center border rounded-md px-3 py-2 text-sm focus-within:ring-1 bg-white dark:bg-gray-800 ${
                     usernameStatus === 'taken' ? 'border-red-300 focus-within:ring-red-300' :
                     usernameStatus === 'available' ? 'border-green-300 focus-within:ring-green-300' :
-                    'dark:border-gray-600 focus-within:ring-black'
+                    'dark:border-gray-700 focus-within:ring-black dark:focus-within:ring-white'
                   }`}>
                     <span className="text-gray-400 mr-1">@</span>
                     <input
@@ -264,13 +270,13 @@ export default function ProfilePage() {
                   <button
                     onClick={handleSaveProfile}
                     disabled={saving || usernameStatus === 'taken' || usernameStatus === 'checking'}
-                    className="bg-black text-white text-xs px-4 py-2 rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-black text-white dark:bg-white dark:text-black text-xs px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
                     {saving ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     onClick={() => setEditing(false)}
-                    className="text-xs border dark:border-gray-600 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
+                    className="text-xs border dark:border-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 transition"
                   >
                     Cancel
                   </button>
@@ -282,14 +288,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { value: stats.subjectsCount, label: 'Subjects' },
           { value: stats.topicsCompleted, label: 'Topics done' },
           { value: formatTime(stats.totalMinutes), label: 'Time studied' },
           { value: stats.streak, label: 'Day streak' },
         ].map(({ value, label }) => (
-          <div key={label} className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4 text-center">
+          <div key={label} className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-4 text-center">
             <p className="text-2xl font-semibold dark:text-white">{value}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{label}</p>
           </div>
@@ -297,10 +303,10 @@ export default function ProfilePage() {
       </div>
 
       {/* Activity calendar */}
-      <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-6">
+      <div className="w-full bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-6">
         <p className="text-sm font-medium mb-4 dark:text-white">Study activity</p>
         <div className="overflow-x-auto">
-          <div className="flex gap-1">
+          <div className="flex gap-1 min-w-max">
             <div className="flex flex-col gap-1 mr-1">
               <div className="h-3" />
               {dayLabels.map((day) => (
@@ -345,6 +351,6 @@ export default function ProfilePage() {
           <span className="text-xs text-gray-400 dark:text-gray-500">More</span>
         </div>
       </div>
-    </main>
+    </div>
   )
 }
