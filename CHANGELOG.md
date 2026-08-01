@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.4.0 — Unified Topbar & Layout Refactor
+### Added
+- Standardized dark mode styling across form elements, inputs, card backgrounds, and navigation containers (`dark:border-gray-800`, `dark:bg-gray-900`) (#84)
+
+### Changed
+- Refactored global layout architecture (`RootLayout`) to replace the persistent desktop sidebar with a unified, responsive top bar navigation across all breakpoints (#84)
+- Sub-page containers (`Dashboard`, `SubjectPage`, `TopicPage`) refactored to inherit layout padding and maximum width cleanly (`w-full space-y-6`), removing redundant `<main>` wrapper tags (#84)
+- Polished topic search dropdown overlay behavior and unit accordion component interactions (#84)
+- Updated study timer styling, difficulty badge indicators, and Markdown typography formatting in study pages (#84)
+
+---
+
 ## v0.3.0 — Polish and Responsiveness
 ### Added
 - Responsive sidebar — hidden on mobile, replaced by fixed top bar
