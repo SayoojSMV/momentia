@@ -102,12 +102,8 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        /*
-          Positioning details:
-          - Mobile (default): top-12 right-0 (drops straight down inside top header)
-          - Desktop (md:): md:top-0 md:left-full md:ml-3 (projects to the right side of sidebar)
-        */
-        <div className="absolute top-12 right-0 md:right-auto md:left-full md:top-0 md:ml-3 w-80 sm:w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+        /* Always aligns below the button and stays anchored to the right edge */
+        <div className="absolute top-12 right-0 w-80 sm:w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl z-50 overflow-hidden">
           <div className="p-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
             <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Notifications</h3>
             {unreadCount > 0 && (
@@ -128,10 +124,11 @@ export default function NotificationBell() {
                 <div
                   key={item.id}
                   onClick={() => !item.is_read && markAsRead(item.id)}
-                  className={`p-3 text-xs transition cursor-pointer flex justify-between items-start ${item.is_read
-                    ? 'bg-transparent text-gray-600 dark:text-gray-400'
-                    : 'bg-blue-50/50 dark:bg-blue-950/20 text-gray-900 dark:text-white font-medium'
-                    }`}
+                  className={`p-3 text-xs transition cursor-pointer flex justify-between items-start ${
+                    item.is_read
+                      ? 'bg-transparent text-gray-600 dark:text-gray-400'
+                      : 'bg-blue-50/50 dark:bg-blue-950/20 text-gray-900 dark:text-white font-medium'
+                  }`}
                 >
                   <div className="flex-1 pr-2">
                     <p className="font-semibold">{item.title}</p>

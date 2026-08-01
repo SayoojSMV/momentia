@@ -137,9 +137,9 @@ export default function Dashboard() {
   const quote = motivationalQuotes[dayOfYear % motivationalQuotes.length]
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+    <div className="w-full space-y-6">
       {/* Greeting banner */}
-      <div className="mb-6">
+      <div>
         <h1 className="text-2xl font-semibold dark:text-white">
           Hi {user?.user_metadata?.full_name?.split(' ')[0] || 'there'}
         </h1>
@@ -149,7 +149,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatTile label="Status" value={stats.status} />
         <StatTile label="Current streak" value={`${stats.streak} days`} />
         <StatTile label="Overall completion" value={`${stats.completion}%`} />
@@ -157,7 +157,7 @@ export default function Dashboard() {
       </div>
 
       {/* Today panel */}
-      <div className="border dark:border-gray-700 rounded-lg p-4 mb-8 bg-white dark:bg-gray-900">
+      <div className="border dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-900">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Today</p>
           <Link href="/timetable" className="text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
@@ -177,7 +177,7 @@ export default function Dashboard() {
               <div
                 key={session.id}
                 onClick={() => router.push(`/subject/${session.subject_id}/topic/${session.topic_id}`)}
-                className="flex items-center justify-between py-2 border-b dark:border-gray-700 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-1"
+                className="flex items-center justify-between py-2 border-b dark:border-gray-800 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-1 transition"
               >
                 <div>
                   <p className="text-sm font-medium dark:text-white">{session.topics?.name}</p>
@@ -190,32 +190,34 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Subjects */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold dark:text-white">Subjects</h2>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-black text-white text-sm px-4 py-2 rounded-md hover:bg-gray-800"
-        >
-          + Add subject
-        </button>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {subjects.length === 0 ? (
-          <p className="text-gray-400 dark:text-gray-500 text-sm">
-            No subjects yet — add one to get started.
-          </p>
-        ) : (
-          subjects.map((subject) => (
-            <SubjectCard key={subject.id} subject={subject} onDelete={handleDeleteSubject} />
-          ))
-        )}
+      {/* Subjects section */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold dark:text-white">Subjects</h2>
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-black text-white dark:bg-white dark:text-black text-sm px-4 py-2 rounded-md hover:opacity-90 transition"
+          >
+            + Add subject
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {subjects.length === 0 ? (
+            <p className="text-gray-400 dark:text-gray-500 text-sm">
+              No subjects yet — add one to get started.
+            </p>
+          ) : (
+            subjects.map((subject) => (
+              <SubjectCard key={subject.id} subject={subject} onDelete={handleDeleteSubject} />
+            ))
+          )}
+        </div>
       </div>
 
       {/* Add subject modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md shadow-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-lg border dark:border-gray-800">
             <h2 className="text-lg font-semibold mb-4 dark:text-white">Add subject</h2>
 
             <div className="mb-3">
@@ -225,7 +227,7 @@ export default function Dashboard() {
                 value={newSubject.name}
                 onChange={(e) => setNewSubject((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="e.g. Organic Chemistry"
-                className="w-full border dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
+                className="w-full border dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white"
               />
             </div>
 
@@ -234,7 +236,7 @@ export default function Dashboard() {
               <select
                 value={newSubject.category}
                 onChange={(e) => setNewSubject((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full border dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
+                className="w-full border dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white"
               >
                 <option value="academics">Academics</option>
                 <option value="side_quest">Side Quest</option>
@@ -250,20 +252,20 @@ export default function Dashboard() {
                 type="date"
                 value={newSubject.exam_date}
                 onChange={(e) => setNewSubject((prev) => ({ ...prev, exam_date: e.target.value }))}
-                className="w-full border dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white dark:bg-gray-800 dark:text-white"
+                className="w-full border dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white"
               />
             </div>
 
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm rounded-md border dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
+                className="px-4 py-2 text-sm rounded-md border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddSubject}
-                className="px-4 py-2 text-sm rounded-md bg-black text-white hover:bg-gray-800"
+                className="px-4 py-2 text-sm rounded-md bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition"
               >
                 Save
               </button>
@@ -271,13 +273,13 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   )
 }
 
 function StatTile({ label, value }) {
   return (
-    <div className="border dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-900">
+    <div className="border dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-900">
       <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
       <p className="text-xl font-semibold mt-1 dark:text-white">{value}</p>
     </div>
@@ -287,17 +289,17 @@ function StatTile({ label, value }) {
 function SubjectCard({ subject, onDelete }) {
   return (
     <Link href={`/subject/${subject.id}`}>
-      <div className="border dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-900 hover:shadow-sm cursor-pointer transition relative">
+      <div className="border dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-900 hover:shadow-sm cursor-pointer transition relative">
         <button
           onClick={(e) => onDelete(e, subject.id)}
-          className="absolute top-2 right-2 text-gray-300 hover:text-red-400 text-sm"
+          className="absolute top-2 right-2 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-sm p-1"
           title="Remove subject"
         >
           ✕
         </button>
         <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">{subject.category.replace('_', ' ')}</p>
         <p className="font-medium mt-1 pr-4 dark:text-white">{subject.name}</p>
-        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mt-3 mb-2">
+        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 mt-3 mb-2">
           <div
             className="bg-black dark:bg-white h-2 rounded-full"
             style={{ width: `${subject.completion ?? 0}%` }}
