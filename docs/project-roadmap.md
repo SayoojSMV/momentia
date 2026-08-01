@@ -57,22 +57,23 @@
 - [x] Settings page — Appearance (#63)
 - [x] Dark mode — full styling pass (#65)
 - [x] Settings page — Danger zone (#64)
-- [x] Responsive Sidevar - Improvement for phone window size (#72)
+- [x] Responsive Sidebar - Improvement for phone window size (#72)
 
-## Phase 9 — Polish and Responsiveness (In Progress)
+## Phase 9 — Polish, UX & Responsiveness (In Progress)
 - [x] Responsive sidebar — mobile drawer (#72)
 - [x] Markdown rendering in topic content and chatbot
 - [x] Settings page — Danger zone (#64)
 - [x] Global mobile layout alignment (top padding fix)
+- [x] Navigation overhaul: Replace sidebar with responsive topbar navigation (#84)
+- [x] Universal high-contrast dark mode & theme token alignment (#84)
+- [ ] Notification system — chat messages, study reminders, exam alerts (#79)
 - [ ] Public landing page (logged-out)
 - [ ] Real streak calculation
-- [ ] Notification system
 
 ## Future Goals
 - [ ] Microsoft sign-in (#17, blocked — environment issue)
 - [ ] Apple sign-in (requires Apple Developer account)
-- [ ] Mobile responsiveness pass
 - [ ] Custom domain
 - [ ] Real streak calculation (column exists, logic not yet implemented)
-- [ ] Notification system
+- [ ] Notification system — chat messages, study reminders, exam alerts (#79)
 - [ ] Public landing page (logged-out)
