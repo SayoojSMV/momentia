@@ -52,6 +52,7 @@ export default function Sidebar() {
     })
   }, [])
 
+  // Keep unread check for the Friends nav item inside drawer
   useEffect(() => {
     if (!user) return
     const checkUnread = async () => {
@@ -152,18 +153,15 @@ export default function Sidebar() {
 
         {/* Right Side: Quick Actions + Notification Bell + Profile Menu */}
         <div className="flex items-center gap-2 sm:gap-3" ref={profileMenuRef}>
-          {/* Notification Bell */}
+          {/* Notification Bell (Contains its own notification count badge) */}
           <NotificationBell />
 
-          {/* User Profile Avatar */}
+          {/* User Profile Avatar (Notification Dot Removed) */}
           <button
             onClick={() => setProfileMenuOpen((prev) => !prev)}
             className="relative focus:outline-none rounded-full ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-700 transition"
           >
             <Avatar size="sm" />
-            {hasUnread && (
-              <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-900 rounded-full" />
-            )}
           </button>
 
           {/* Profile Dropdown */}

@@ -36,22 +36,41 @@ export default function FriendsPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Realtime subscription for incoming messages
   useEffect(() => {
-    if (!user || !selectedFriend) return
+    if (!user) return
+
     const channel = supabase
-      .channel(`incoming-${user.id}-${selectedFriend.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'messages',
-        filter: `sender_id=eq.${selectedFriend.id}`,
-      }, (payload) => {
-        const msg = payload.new
-        if (msg.receiver_id === user.id) {
-          setMessages((prev) => [...prev, msg])
-          supabase.from('messages').update({ is_read: true }).eq('id', msg.id)
+      .channel(`realtime-messages-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const msg = payload.new
+
+          // If the message is from the active chat, display it immediately and mark as read
+          if (selectedFriend && msg.sender_id === selectedFriend.id) {
+            setMessages((prev) => [...prev, msg])
+            await supabase.from('messages').update({ is_read: true }).eq('id', msg.id)
+          } else {
+            // Otherwise, increment unread badge count for that friend
+            setUnreadCounts((prev) => ({
+              ...prev,
+              [msg.sender_id]: (prev[msg.sender_id] || 0) + 1,
+            }))
+          }
         }
-      })
+      )
       .subscribe()
-    return () => supabase.removeChannel(channel)
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [user, selectedFriend])
 
   const fetchFriends = async (userId) => {
@@ -96,7 +115,7 @@ export default function FriendsPage() {
       .from('friend_requests').select('sender_id, receiver_id')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
     const excludeIds = new Set([userId])
-    ;(requests || []).forEach((r) => { excludeIds.add(r.sender_id); excludeIds.add(r.receiver_id) })
+      ; (requests || []).forEach((r) => { excludeIds.add(r.sender_id); excludeIds.add(r.receiver_id) })
     const { data, error } = await supabase
       .from('profiles').select('id, full_name, avatar_url')
       .not('id', 'in', `(${[...excludeIds].join(',')})`)
@@ -159,13 +178,37 @@ export default function FriendsPage() {
   }
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedFriend) return
+    if (!newMessage.trim() || !selectedFriend || !user) return
     const content = newMessage.trim()
     setNewMessage('')
-    const { data, error } = await supabase.from('messages')
-      .insert({ sender_id: user.id, receiver_id: selectedFriend.id, content })
-      .select().single()
-    if (!error && data) setMessages((prev) => [...prev, data])
+
+    const payload = {
+      sender_id: user.id,
+      receiver_id: selectedFriend.id,
+      content: content,
+      is_read: false
+    }
+
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([payload])
+      .select('id, sender_id, receiver_id, content, is_read, created_at')
+      .single()
+
+    if (error) {
+      console.error('Error sending message:', error)
+      const tempMsg = {
+        id: Date.now().toString(),
+        ...payload,
+        created_at: new Date().toISOString()
+      }
+      setMessages((prev) => [...prev, tempMsg])
+      return
+    }
+
+    if (data) {
+      setMessages((prev) => [...prev, data])
+    }
   }
 
   if (loading) return null
@@ -287,9 +330,8 @@ export default function FriendsPage() {
                   <div
                     key={friend.id}
                     onClick={() => handleSelectFriend(friend)}
-                    className={`flex items-center gap-3 py-2 px-2.5 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition ${
-                      selectedFriend?.id === friend.id ? 'bg-gray-100 dark:bg-gray-800' : ''
-                    }`}
+                    className={`flex items-center gap-3 py-2 px-2.5 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition ${selectedFriend?.id === friend.id ? 'bg-gray-100 dark:bg-gray-800' : ''
+                      }`}
                   >
                     <div className="relative">
                       <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-medium dark:text-gray-300 overflow-hidden">
@@ -344,11 +386,10 @@ export default function FriendsPage() {
                       key={msg.id}
                       className={`flex flex-col ${msg.sender_id === user.id ? 'items-end' : 'items-start'}`}
                     >
-                      <div className={`max-w-xs px-3.5 py-2 rounded-xl text-sm ${
-                        msg.sender_id === user.id
+                      <div className={`max-w-xs px-3.5 py-2 rounded-xl text-sm ${msg.sender_id === user.id
                           ? 'bg-black text-white dark:bg-white dark:text-black'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
-                      }`}>
+                        }`}>
                         {msg.content}
                       </div>
                       <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 px-1">
