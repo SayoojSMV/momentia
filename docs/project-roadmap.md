@@ -66,7 +66,7 @@
 - [x] Global mobile layout alignment (top padding fix)
 - [x] Navigation overhaul: Replace sidebar with responsive topbar navigation (#84)
 - [x] Universal high-contrast dark mode & theme token alignment (#84)
-- [ ] Notification system — chat messages, study reminders, exam alerts (#79)
+- [x] Real-time notification system — sender titles, direct chat links, & dynamic subscriptions (#79)
 - [ ] Public landing page (logged-out)
 - [ ] Real streak calculation
 
@@ -75,5 +75,4 @@
 - [ ] Apple sign-in (requires Apple Developer account)
 - [ ] Custom domain
 - [ ] Real streak calculation (column exists, logic not yet implemented)
-- [ ] Notification system — chat messages, study reminders, exam alerts (#79)
 - [ ] Public landing page (logged-out)
