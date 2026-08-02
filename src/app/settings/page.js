@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
@@ -24,44 +24,109 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
   const [showResetModal, setShowResetModal] = useState(false)
   const [resetting, setResetting] = useState(false)
   const router = useRouter()
   const { darkMode, toggleDarkMode, sidebarDefault, setSidebarDefault } = useTheme()
 
+  // Academic Details
   const [designation, setDesignation] = useState('')
   const [institution, setInstitution] = useState('')
   const [yearOfStudy, setYearOfStudy] = useState('')
   const [priorSubjects, setPriorSubjects] = useState([])
   const [priorInput, setPriorInput] = useState('')
+
+  // Study Preferences
   const [dailyMinutes, setDailyMinutes] = useState(120)
   const [sessionLength, setSessionLength] = useState(45)
   const [restDay, setRestDay] = useState('None')
   const [reminderDays, setReminderDays] = useState(5)
+
+  // Notification Preferences (New)
+  const [studyStartTime, setStudyStartTime] = useState('18:00')
+  const [studyEndTime, setStudyEndTime] = useState('22:00')
+  const [studyRemindersEnabled, setStudyRemindersEnabled] = useState(true)
+  const [examAlertsEnabled, setExamAlertsEnabled] = useState(true)
+
+  // Initial State for Dirty Checking
+  const [initialData, setInitialData] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.replace('/login'); return }
       setUser(session.user)
       supabase.from('profiles').select('*').eq('id', session.user.id).single()
-        .then(({ data }) => {
-          if (!data) return
-          setDesignation(data.designation || '')
-          setInstitution(data.institution || '')
-          setYearOfStudy(data.year_of_study || '')
-          setPriorSubjects(data.prior_subjects || [])
-          setDailyMinutes(data.daily_study_minutes || 120)
-          setSessionLength(data.session_length_minutes || 45)
-          setRestDay(data.rest_day || 'None')
-          setReminderDays(data.exam_reminder_days || 5)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Failed to load profile:', error)
+            setLoading(false)
+            return
+          }
+          if (data) {
+            const profileData = {
+              designation: data.designation || '',
+              institution: data.institution || '',
+              yearOfStudy: data.year_of_study || '',
+              priorSubjects: data.prior_subjects || [],
+              dailyMinutes: data.daily_study_minutes || 120,
+              sessionLength: data.session_length_minutes || 45,
+              restDay: data.rest_day || 'None',
+              reminderDays: data.exam_reminder_days || 5,
+              studyStartTime: data.study_start_time || '18:00',
+              studyEndTime: data.study_end_time || '22:00',
+              studyRemindersEnabled: data.study_reminders_enabled ?? true,
+              examAlertsEnabled: data.exam_alerts_enabled ?? true,
+            }
+
+            setDesignation(profileData.designation)
+            setInstitution(profileData.institution)
+            setYearOfStudy(profileData.yearOfStudy)
+            setPriorSubjects(profileData.priorSubjects)
+            setDailyMinutes(profileData.dailyMinutes)
+            setSessionLength(profileData.sessionLength)
+            setRestDay(profileData.restDay)
+            setReminderDays(profileData.reminderDays)
+            setStudyStartTime(profileData.studyStartTime)
+            setStudyEndTime(profileData.studyEndTime)
+            setStudyRemindersEnabled(profileData.studyRemindersEnabled)
+            setExamAlertsEnabled(profileData.examAlertsEnabled)
+
+            setInitialData(profileData)
+          }
           setLoading(false)
         })
     })
   }, [router])
 
+  // Compute dirty check
+  const isDirty = useMemo(() => {
+    if (!initialData) return false
+    return (
+      designation !== initialData.designation ||
+      institution !== initialData.institution ||
+      yearOfStudy !== initialData.yearOfStudy ||
+      JSON.stringify(priorSubjects) !== JSON.stringify(initialData.priorSubjects) ||
+      dailyMinutes !== initialData.dailyMinutes ||
+      sessionLength !== initialData.sessionLength ||
+      restDay !== initialData.restDay ||
+      reminderDays !== initialData.reminderDays ||
+      studyStartTime !== initialData.studyStartTime ||
+      studyEndTime !== initialData.studyEndTime ||
+      studyRemindersEnabled !== initialData.studyRemindersEnabled ||
+      examAlertsEnabled !== initialData.examAlertsEnabled
+    )
+  }, [
+    initialData, designation, institution, yearOfStudy, priorSubjects,
+    dailyMinutes, sessionLength, restDay, reminderDays, studyStartTime,
+    studyEndTime, studyRemindersEnabled, examAlertsEnabled
+  ])
+
   const handleAddPriorSubject = () => {
     const val = priorInput.trim()
-    if (!val || priorSubjects.includes(val)) return
+    if (!val) return
+    // Case-insensitive check to avoid duplicate tags
+    if (priorSubjects.some((s) => s.toLowerCase() === val.toLowerCase())) return
     setPriorSubjects((prev) => [...prev, val])
     setPriorInput('')
   }
@@ -70,54 +135,98 @@ export default function SettingsPage() {
     setPriorSubjects((prev) => prev.filter((s) => s !== subject))
   }
 
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    if (e) e.preventDefault()
     setSaving(true)
     setSaved(false)
-    const { error } = await supabase.from('profiles').update({
-      designation, institution, year_of_study: yearOfStudy,
-      prior_subjects: priorSubjects, daily_study_minutes: dailyMinutes,
-      session_length_minutes: sessionLength, rest_day: restDay,
+    setErrorMsg('')
+
+    const payload = {
+      designation,
+      institution,
+      year_of_study: yearOfStudy,
+      prior_subjects: priorSubjects,
+      daily_study_minutes: dailyMinutes,
+      session_length_minutes: sessionLength,
+      rest_day: restDay,
       exam_reminder_days: reminderDays,
-    }).eq('id', user.id)
+      study_start_time: studyStartTime,
+      study_end_time: studyEndTime,
+      study_reminders_enabled: studyRemindersEnabled,
+      exam_alerts_enabled: examAlertsEnabled,
+    }
+
+    const { error } = await supabase.from('profiles').update(payload).eq('id', user.id)
     setSaving(false)
-    if (!error) { setSaved(true); setTimeout(() => setSaved(false), 3000) }
+
+    if (error) {
+      setErrorMsg('Failed to save settings. Please try again.')
+    } else {
+      setSaved(true)
+      setInitialData({
+        designation,
+        institution,
+        yearOfStudy,
+        priorSubjects,
+        dailyMinutes,
+        sessionLength,
+        restDay,
+        reminderDays,
+        studyStartTime,
+        studyEndTime,
+        studyRemindersEnabled,
+        examAlertsEnabled,
+      })
+      setTimeout(() => setSaved(false), 3000)
+    }
   }
 
   const handleResetStudyData = async () => {
     setResetting(true)
+    setErrorMsg('')
 
-    // Delete all subjects — units, topics, materials, schedule cascade automatically
-    await supabase
-      .from('subjects')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Clear schedule directly in case orphaned rows exist
-    await supabase
-      .from('schedule')
-      .delete()
-      .eq('user_id', user.id)
+    // Explicit error-handled operations
+    const { error: subjectErr } = await supabase.from('subjects').delete().eq('user_id', user.id)
+    const { error: scheduleErr } = await supabase.from('schedule').delete().eq('user_id', user.id)
 
     setResetting(false)
     setShowResetModal(false)
 
-    // Redirect to dashboard so the updated state is immediately visible
-    router.push('/')
+    if (subjectErr || scheduleErr) {
+      setErrorMsg('An error occurred while resetting study data.')
+    } else {
+      router.push('/')
+    }
   }
 
-  if (loading) return null
+  // Skeleton Loading UI
+  if (loading) {
+    return (
+      <div className="w-full space-y-6 animate-pulse">
+        <div className="h-8 w-40 bg-gray-200 dark:bg-gray-800 rounded-md" />
+        <div className="h-48 w-full bg-gray-100 dark:bg-gray-900 border dark:border-gray-800 rounded-xl" />
+        <div className="h-64 w-full bg-gray-100 dark:bg-gray-900 border dark:border-gray-800 rounded-xl" />
+      </div>
+    )
+  }
 
   return (
-    <div className="w-full space-y-6">
+    <form onSubmit={handleSave} className="w-full space-y-6 pb-12">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-semibold dark:text-white">Settings</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          Customize your preferences, academic background, and app preferences
+          Customize your preferences, notification window, and academic profile
         </p>
       </div>
 
-      {/* Account details */}
+      {errorMsg && (
+        <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
+          {errorMsg}
+        </div>
+      )}
+
+      {/* Academic Details */}
       <section className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-6">
         <h2 className="text-base font-semibold mb-4 dark:text-white">Academic Details</h2>
         <div className="space-y-4">
@@ -175,11 +284,17 @@ export default function SettingsPage() {
                 type="text"
                 value={priorInput}
                 onChange={(e) => setPriorInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddPriorSubject()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddPriorSubject()
+                  }
+                }}
                 placeholder="e.g. Python, Calculus, History"
                 className="flex-1 border dark:border-gray-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
               />
               <button
+                type="button"
                 onClick={handleAddPriorSubject}
                 className="bg-black text-white dark:bg-white dark:text-black text-xs font-medium px-4 py-2 rounded-md hover:opacity-90 transition"
               >
@@ -195,6 +310,8 @@ export default function SettingsPage() {
                   >
                     {s}
                     <button
+                      type="button"
+                      aria-label={`Remove ${s}`}
                       onClick={() => handleRemovePriorSubject(s)}
                       className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition"
                     >
@@ -208,7 +325,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* Study preferences */}
+      {/* Study Preferences */}
       <section className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-6">
         <h2 className="text-base font-semibold mb-4 dark:text-white">Study Preferences</h2>
         <div className="space-y-5">
@@ -239,6 +356,7 @@ export default function SettingsPage() {
               {SESSION_LENGTHS.map((len) => (
                 <button
                   key={len}
+                  type="button"
                   onClick={() => setSessionLength(len)}
                   className={`flex-1 py-2 rounded-md text-xs font-medium border transition ${
                     sessionLength === len
@@ -274,6 +392,7 @@ export default function SettingsPage() {
               {REMINDER_DAYS.map((d) => (
                 <button
                   key={d}
+                  type="button"
                   onClick={() => setReminderDays(d)}
                   className={`flex-1 py-2 rounded-md text-xs font-medium border transition ${
                     reminderDays === d
@@ -285,9 +404,82 @@ export default function SettingsPage() {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-              Dashboard indicates "Falling behind" this many days prior to an scheduled exam
-            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Notifications & Study Reminders Window (NEW) */}
+      <section className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-6">
+        <h2 className="text-base font-semibold mb-1 dark:text-white">Notifications & Availability</h2>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-5">
+          Define your free time window so study alerts only trigger when you are available.
+        </p>
+
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
+                Preferred Study Start Time
+              </label>
+              <input
+                type="time"
+                value={studyStartTime}
+                onChange={(e) => setStudyStartTime(e.target.value)}
+                className="w-full border dark:border-gray-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
+                Preferred Study End Time
+              </label>
+              <input
+                type="time"
+                value={studyEndTime}
+                onChange={(e) => setStudyEndTime(e.target.value)}
+                className="w-full border dark:border-gray-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div>
+              <p className="text-sm font-medium dark:text-white">Study window reminders</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Send periodic reminders when you have pending study targets in this window
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setStudyRemindersEnabled((prev) => !prev)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                studyRemindersEnabled ? 'bg-black dark:bg-white' : 'bg-gray-200 dark:bg-gray-800'
+              }`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white dark:bg-gray-900 rounded-full shadow transition-transform ${
+                studyRemindersEnabled ? 'translate-x-5' : 'translate-x-0'
+              }`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t dark:border-gray-800">
+            <div>
+              <p className="text-sm font-medium dark:text-white">Exam countdown alerts</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Notify me on major exam milestones (14, 7, 3, and 1 day remaining)
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setExamAlertsEnabled((prev) => !prev)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                examAlertsEnabled ? 'bg-black dark:bg-white' : 'bg-gray-200 dark:bg-gray-800'
+              }`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white dark:bg-gray-900 rounded-full shadow transition-transform ${
+                examAlertsEnabled ? 'translate-x-5' : 'translate-x-0'
+              }`} />
+            </button>
           </div>
         </div>
       </section>
@@ -304,6 +496,7 @@ export default function SettingsPage() {
               </p>
             </div>
             <button
+              type="button"
               onClick={toggleDarkMode}
               className={`relative w-11 h-6 rounded-full transition-colors ${
                 darkMode ? 'bg-white' : 'bg-gray-200'
@@ -324,6 +517,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setSidebarDefault('collapsed')}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium border transition ${
                   sidebarDefault === 'collapsed'
@@ -334,6 +528,7 @@ export default function SettingsPage() {
                 Collapsed
               </button>
               <button
+                type="button"
                 onClick={() => setSidebarDefault('expanded')}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium border transition ${
                   sidebarDefault === 'expanded'
@@ -348,19 +543,21 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* Save Action */}
+      {/* Primary Save Button */}
       <button
-        onClick={handleSave}
+        type="submit"
         disabled={saving}
         className={`w-full py-3 rounded-xl text-sm font-medium transition ${
           saving
             ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
             : saved
             ? 'bg-green-600 text-white'
+            : isDirty
+            ? 'bg-black text-white dark:bg-white dark:text-black ring-2 ring-offset-2 ring-black dark:ring-white hover:opacity-90'
             : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-90'
         }`}
       >
-        {saving ? 'Saving changes...' : saved ? '✓ Settings Saved' : 'Save settings'}
+        {saving ? 'Saving changes...' : saved ? '✓ Settings Saved' : isDirty ? 'Save Unsaved Changes' : 'Save settings'}
       </button>
 
       {/* Danger Zone */}
@@ -376,10 +573,11 @@ export default function SettingsPage() {
           <div>
             <p className="text-sm font-medium dark:text-white">Reset study data</p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              Deletes all subjects, units, topics, uploaded materials, and timetable schedules. Account, profile, and friends are retained.
+              Deletes all subjects, units, topics, uploaded materials, and timetable schedules.
             </p>
           </div>
           <button
+            type="button"
             onClick={() => setShowResetModal(true)}
             className="flex-shrink-0 px-4 py-2 text-xs font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition"
           >
@@ -405,15 +603,11 @@ export default function SettingsPage() {
               <li>All units and topics</li>
               <li>All uploaded study materials</li>
               <li>Your generated timetable and study schedule</li>
-              <li>All recorded study progress and time tracking</li>
             </ul>
-
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-6">
-              Your profile preferences and friend connections will not be deleted.
-            </p>
 
             <div className="flex gap-3 justify-end">
               <button
+                type="button"
                 onClick={() => setShowResetModal(false)}
                 disabled={resetting}
                 className="px-4 py-2 text-xs font-medium border dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 disabled:opacity-50 transition"
@@ -425,7 +619,7 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
-    </div>
+    </form>
   )
 }
 
@@ -441,6 +635,7 @@ function ResetButton({ onConfirm, resetting }) {
 
   return (
     <button
+      type="button"
       onClick={onConfirm}
       disabled={!ready || resetting}
       className="px-4 py-2 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
