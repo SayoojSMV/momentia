@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.5.0 — Realtime Notifications & Chat UI Overhaul
+### Added
+- Real-time notification system with custom Supabase Postgres trigger (`handle_new_chat_message`) displaying the sender's actual display name
+- Clickable notification cards with direct navigation routing to the specific sender's chat (`/friends?chat=[sender_id]`)
+- WhatsApp-style inline timestamps positioned at the bottom-right of message bubbles
+
+### Changed
+- Refactored `NotificationBell` real-time channel setup to use dynamic channel names (`notifications_${userId}_${Date.now()}`) to prevent duplicate channel subscription runtime errors on page refreshes
+- Removed standalone `"View details →"` link in notification cards in favor of full card tap/click interactions
+
+---
+
 ## v0.4.0 — Unified Topbar & Layout Refactor
 ### Added
 - Standardized dark mode styling across form elements, inputs, card backgrounds, and navigation containers (`dark:border-gray-800`, `dark:bg-gray-900`) (#84)
