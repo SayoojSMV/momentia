@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function FriendsPage() {
@@ -17,12 +17,18 @@ export default function FriendsPage() {
   const [newMessage, setNewMessage] = useState('')
   const [unreadCounts, setUnreadCounts] = useState({})
   const [suggestions, setSuggestions] = useState([])
+  
   const messagesEndRef = useRef(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const chatParam = searchParams.get('chat')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace('/login'); return }
+      if (!session) { 
+        router.replace('/login')
+        return 
+      }
       setUser(session.user)
       fetchFriends(session.user.id)
       fetchPendingRequests(session.user.id)
@@ -32,16 +38,28 @@ export default function FriendsPage() {
     })
   }, [router])
 
+  // Scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Handle URL query parameter `?chat=USER_ID` from Notification Clicks
+  useEffect(() => {
+    if (!chatParam || !user || !friends.length) return
+
+    const targetFriend = friends.find((f) => f.id === chatParam)
+    if (targetFriend) {
+      handleSelectFriend(targetFriend)
+    }
+  }, [chatParam, friends, user])
 
   // Realtime subscription for incoming messages
   useEffect(() => {
     if (!user) return
 
+    const channelName = `realtime-messages-${user.id}-${Date.now()}`
     const channel = supabase
-      .channel(`realtime-messages-${user.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -53,7 +71,7 @@ export default function FriendsPage() {
         async (payload) => {
           const msg = payload.new
 
-          // If the message is from the active chat, display it immediately and mark as read
+          // If message is from active chat, display it immediately and mark as read
           if (selectedFriend && msg.sender_id === selectedFriend.id) {
             setMessages((prev) => [...prev, msg])
             await supabase.from('messages').update({ is_read: true }).eq('id', msg.id)
@@ -75,69 +93,113 @@ export default function FriendsPage() {
 
   const fetchFriends = async (userId) => {
     const { data, error } = await supabase
-      .from('friend_requests').select('sender_id, receiver_id')
-      .eq('status', 'accepted').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .from('friend_requests')
+      .select('sender_id, receiver_id')
+      .eq('status', 'accepted')
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+
     if (error || !data) return
-    const friendIds = data.map((r) => r.sender_id === userId ? r.receiver_id : r.sender_id)
+    const friendIds = data.map((r) => (r.sender_id === userId ? r.receiver_id : r.sender_id))
     if (!friendIds.length) return
+
     const { data: profiles } = await supabase
-      .from('profiles').select('id, full_name, avatar_url').in('id', friendIds)
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', friendIds)
+
     if (profiles) setFriends(profiles)
   }
 
   const fetchPendingRequests = async (userId) => {
     const { data, error } = await supabase
-      .from('friend_requests').select('id, sender_id')
-      .eq('receiver_id', userId).eq('status', 'pending')
+      .from('friend_requests')
+      .select('id, sender_id')
+      .eq('receiver_id', userId)
+      .eq('status', 'pending')
+
     if (error || !data?.length) return
     const senderIds = data.map((r) => r.sender_id)
+
     const { data: profiles } = await supabase
-      .from('profiles').select('id, full_name, avatar_url').in('id', senderIds)
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', senderIds)
+
     if (profiles) {
-      setPendingReceived(profiles.map((p) => ({
-        ...p, requestId: data.find((r) => r.sender_id === p.id)?.id,
-      })))
+      setPendingReceived(
+        profiles.map((p) => ({
+          ...p,
+          requestId: data.find((r) => r.sender_id === p.id)?.id,
+        }))
+      )
     }
   }
 
   const fetchUnreadCounts = async (userId) => {
     const { data, error } = await supabase
-      .from('messages').select('sender_id')
-      .eq('receiver_id', userId).eq('is_read', false)
+      .from('messages')
+      .select('sender_id')
+      .eq('receiver_id', userId)
+      .eq('is_read', false)
+
     if (error || !data) return
     const counts = {}
-    data.forEach((msg) => { counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1 })
+    data.forEach((msg) => {
+      counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1
+    })
     setUnreadCounts(counts)
   }
 
   const fetchSuggestions = async (userId) => {
     const { data: requests } = await supabase
-      .from('friend_requests').select('sender_id, receiver_id')
+      .from('friend_requests')
+      .select('sender_id, receiver_id')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+
     const excludeIds = new Set([userId])
-      ; (requests || []).forEach((r) => { excludeIds.add(r.sender_id); excludeIds.add(r.receiver_id) })
+    ;(requests || []).forEach((r) => {
+      excludeIds.add(r.sender_id)
+      excludeIds.add(r.receiver_id)
+    })
+
     const { data, error } = await supabase
-      .from('profiles').select('id, full_name, avatar_url')
+      .from('profiles')
+      .select('id, full_name, avatar_url')
       .not('id', 'in', `(${[...excludeIds].join(',')})`)
-      .order('created_at', { ascending: false }).limit(5)
+      .order('created_at', { ascending: false })
+      .limit(5)
+
     if (!error && data) setSuggestions(data)
   }
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
     setSearching(true)
+
     const { data, error } = await supabase
-      .from('profiles').select('id, full_name, avatar_url')
-      .ilike('full_name', `%${searchQuery}%`).neq('id', user.id).limit(10)
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .ilike('full_name', `%${searchQuery}%`)
+      .neq('id', user.id)
+      .limit(10)
+
     if (!error) setSearchResults(data)
     setSearching(false)
   }
 
   const handleLiveSearch = async (value) => {
-    if (!value.trim()) { setSearchResults([]); return }
+    if (!value.trim()) {
+      setSearchResults([])
+      return
+    }
+
     const { data, error } = await supabase
-      .from('profiles').select('id, full_name, avatar_url')
-      .ilike('full_name', `%${value.trim()}%`).neq('id', user.id).limit(5)
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .ilike('full_name', `%${value.trim()}%`)
+      .neq('id', user.id)
+      .limit(5)
+
     if (!error) setSearchResults(data)
   }
 
@@ -147,34 +209,63 @@ export default function FriendsPage() {
   }
 
   const handleRespondToRequest = async (requestId, senderId, accept) => {
-    await supabase.from('friend_requests')
-      .update({ status: accept ? 'accepted' : 'declined' }).eq('id', requestId)
+    await supabase
+      .from('friend_requests')
+      .update({ status: accept ? 'accepted' : 'declined' })
+      .eq('id', requestId)
+
     setPendingReceived((prev) => prev.filter((r) => r.requestId !== requestId))
+
     if (accept) {
       const { data: profile } = await supabase
-        .from('profiles').select('id, full_name, avatar_url').eq('id', senderId).single()
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .eq('id', senderId)
+        .single()
+
       if (profile) setFriends((prev) => [...prev, profile])
     }
   }
 
   const handleSelectFriend = async (friend) => {
     setSelectedFriend(friend)
-    await supabase.from('messages').update({ is_read: true })
-      .eq('receiver_id', user.id).eq('sender_id', friend.id).eq('is_read', false)
-    setUnreadCounts((prev) => { const updated = { ...prev }; delete updated[friend.id]; return updated })
-    const { data, error } = await supabase.from('messages').select('*')
+
+    await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('receiver_id', user.id)
+      .eq('sender_id', friend.id)
+      .eq('is_read', false)
+
+    setUnreadCounts((prev) => {
+      const updated = { ...prev }
+      delete updated[friend.id]
+      return updated
+    })
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${friend.id}),and(sender_id.eq.${friend.id},receiver_id.eq.${user.id})`)
       .order('created_at', { ascending: true })
+
     if (!error) setMessages(data)
   }
 
   const handleRemoveFriend = async (friendId) => {
     const confirmed = window.confirm('Remove this friend?')
     if (!confirmed) return
-    await supabase.from('friend_requests').delete()
+
+    await supabase
+      .from('friend_requests')
+      .delete()
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${user.id})`)
+
     setFriends((prev) => prev.filter((f) => f.id !== friendId))
-    if (selectedFriend?.id === friendId) { setSelectedFriend(null); setMessages([]) }
+    if (selectedFriend?.id === friendId) {
+      setSelectedFriend(null)
+      setMessages([])
+    }
   }
 
   const handleSendMessage = async () => {
@@ -186,7 +277,7 @@ export default function FriendsPage() {
       sender_id: user.id,
       receiver_id: selectedFriend.id,
       content: content,
-      is_read: false
+      is_read: false,
     }
 
     const { data, error } = await supabase
@@ -200,7 +291,7 @@ export default function FriendsPage() {
       const tempMsg = {
         id: Date.now().toString(),
         ...payload,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       }
       setMessages((prev) => [...prev, tempMsg])
       return
@@ -232,7 +323,10 @@ export default function FriendsPage() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); handleLiveSearch(e.target.value) }}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  handleLiveSearch(e.target.value)
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Search by name"
                 className="flex-1 border dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
@@ -295,17 +389,25 @@ export default function FriendsPage() {
             <p className="text-sm font-medium mb-3 dark:text-white">Study mates</p>
             {friends.length === 0 ? (
               <div>
-                <p className="text-gray-400 dark:text-gray-500 text-sm mb-3">No friends yet — search above.</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mb-3">
+                  No friends yet — search above.
+                </p>
                 {suggestions.length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Suggested</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
+                      Suggested
+                    </p>
                     <div className="space-y-2">
                       {suggestions.map((profile) => (
                         <div key={profile.id} className="flex items-center justify-between py-1">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium flex-shrink-0 dark:text-gray-300 overflow-hidden">
                               {profile.avatar_url ? (
-                                <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
+                                <img
+                                  src={profile.avatar_url}
+                                  alt={profile.full_name}
+                                  className="w-full h-full object-cover"
+                                />
                               ) : (
                                 profile.full_name?.[0] || '?'
                               )}
@@ -313,7 +415,10 @@ export default function FriendsPage() {
                             <p className="text-sm dark:text-gray-300">{profile.full_name}</p>
                           </div>
                           <button
-                            onClick={() => { handleSendRequest(profile.id); setSuggestions((prev) => prev.filter((s) => s.id !== profile.id)) }}
+                            onClick={() => {
+                              handleSendRequest(profile.id)
+                              setSuggestions((prev) => prev.filter((s) => s.id !== profile.id))
+                            }}
                             className="text-xs border dark:border-gray-700 rounded-md px-2.5 py-1 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 transition"
                           >
                             Add
@@ -330,13 +435,18 @@ export default function FriendsPage() {
                   <div
                     key={friend.id}
                     onClick={() => handleSelectFriend(friend)}
-                    className={`flex items-center gap-3 py-2 px-2.5 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition ${selectedFriend?.id === friend.id ? 'bg-gray-100 dark:bg-gray-800' : ''
-                      }`}
+                    className={`flex items-center gap-3 py-2 px-2.5 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition ${
+                      selectedFriend?.id === friend.id ? 'bg-gray-100 dark:bg-gray-800' : ''
+                    }`}
                   >
                     <div className="relative">
                       <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-medium dark:text-gray-300 overflow-hidden">
                         {friend.avatar_url ? (
-                          <img src={friend.avatar_url} alt={friend.full_name} className="w-full h-full object-cover" />
+                          <img
+                            src={friend.avatar_url}
+                            alt={friend.full_name}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           friend.full_name?.[0] || '?'
                         )}
@@ -360,7 +470,10 @@ export default function FriendsPage() {
 
         {/* Chat panel */}
         <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl h-full flex flex-col" style={{ minHeight: '500px' }}>
+          <div
+            className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl h-full flex flex-col"
+            style={{ minHeight: '500px' }}
+          >
             {!selectedFriend ? (
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-gray-400 dark:text-gray-500 text-sm">Select a friend to start chatting</p>
@@ -377,28 +490,69 @@ export default function FriendsPage() {
                   </button>
                 </div>
 
-                <div className="overflow-y-auto p-4 space-y-3 flex-1" style={{ maxHeight: '420px' }}>
+                <div className="overflow-y-auto p-4 space-y-1.5 flex-1" style={{ maxHeight: '420px' }}>
                   {messages.length === 0 && (
-                    <p className="text-gray-400 dark:text-gray-500 text-sm text-center my-auto">No messages yet — say hello!</p>
+                    <p className="text-gray-400 dark:text-gray-500 text-sm text-center my-auto">
+                      No messages yet — say hello!
+                    </p>
                   )}
-                  {messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col ${msg.sender_id === user.id ? 'items-end' : 'items-start'}`}
-                    >
-                      <div className={`max-w-xs px-3.5 py-2 rounded-xl text-sm ${msg.sender_id === user.id
-                          ? 'bg-black text-white dark:bg-white dark:text-black'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
-                        }`}>
-                        {msg.content}
+
+                  {messages.map((msg, index) => {
+                    const isSender = msg.sender_id === user.id
+
+                    const formattedTime = new Date(msg.created_at).toLocaleTimeString('en-IN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    }).toLowerCase()
+
+                    // WhatsApp grouping logic: Check if next message is from same sender in same minute
+                    const nextMsg = messages[index + 1]
+                    const isNextFromSameSender = nextMsg && nextMsg.sender_id === msg.sender_id
+                    
+                    const isSameTimeAsNext =
+                      nextMsg &&
+                      new Date(nextMsg.created_at).toLocaleTimeString('en-IN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }) ===
+                        new Date(msg.created_at).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+
+                    // Only render timestamp on the final message of a minute cluster
+                    const showTimestamp = !(isNextFromSameSender && isSameTimeAsNext)
+
+                    return (
+                      <div
+                        key={msg.id || index}
+                        className={`flex flex-col ${isSender ? 'items-end' : 'items-start'}`}
+                      >
+                        <div
+                          className={`relative max-w-[75%] px-3 py-1.5 rounded-2xl text-xs sm:text-sm shadow-xs flex flex-wrap items-end justify-between gap-x-2.5 ${
+                            isSender
+                              ? 'bg-black text-white dark:bg-white dark:text-black rounded-tr-xs'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-xs'
+                          }`}
+                        >
+                          <span className="break-words leading-relaxed">{msg.content}</span>
+
+                          {showTimestamp && (
+                            <span
+                              className={`text-[9px] self-end ml-auto pt-1 select-none whitespace-nowrap font-medium ${
+                                isSender
+                                  ? 'text-gray-300 dark:text-gray-600'
+                                  : 'text-gray-400 dark:text-gray-500'
+                              }`}
+                            >
+                              {formattedTime}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 px-1">
-                        {new Date(msg.created_at).toLocaleTimeString('en-IN', {
-                          hour: '2-digit', minute: '2-digit', hour12: true,
-                        })}
-                      </p>
-                    </div>
-                  ))}
+                    )
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
 

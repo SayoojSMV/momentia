@@ -37,7 +37,7 @@ export default function NotificationBell() {
         setUnreadCount(uniqueData.filter((n) => !n.is_read).length)
       }
 
-      // Append Date.now() to ensure a clean channel identity across page refreshes
+      // Unique channel name per mount to prevent cached channel registration collisions
       const channelName = `notifications_${user.id}_${Date.now()}`
 
       activeChannel = supabase
@@ -75,6 +75,7 @@ export default function NotificationBell() {
     }
   }, [])
 
+  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -140,6 +141,7 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={dropdownRef}>
+      {/* Bell Icon Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -162,8 +164,10 @@ export default function NotificationBell() {
         )}
       </button>
 
+      {/* Notifications Popover */}
       {isOpen && (
         <div className="absolute top-12 right-0 w-80 sm:w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl z-50 overflow-hidden">
+          {/* Header */}
           <div className="p-3.5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Notifications</h3>
@@ -184,6 +188,7 @@ export default function NotificationBell() {
             )}
           </div>
 
+          {/* List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
             {notifications.length === 0 ? (
               <div className="p-8 text-center">
