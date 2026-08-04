@@ -67,6 +67,7 @@
 - [x] Navigation overhaul: Replace sidebar with responsive topbar navigation (#84)
 - [x] Universal high-contrast dark mode & theme token alignment (#84)
 - [x] Real-time notification system — sender titles, direct chat links, & dynamic subscriptions (#79)
+- [x] Grouped / aggregated chat notification cards by thread with stacked message previews (#79)
 - [ ] Public landing page (logged-out)
 - [ ] Real streak calculation
 
