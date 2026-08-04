@@ -1,16 +1,5 @@
 # Changelog
 
-## v0.5.2 — Grouped Notification Threads & Stacked Previews
-### Added
-- Notification thread aggregation inside `NotificationBell` grouping multiple chat messages from the same sender into a single interactive card
-- Stacked preview bubbles displaying up to 5 recent messages per conversation thread with unread state indicators
-- Grouped mark-as-read interaction updating all notifications within a selected thread in a single batch query
-
-### Fixed
-- Fixed Supabase query method chain order in `NotificationBell` where `.in()` was incorrectly invoked before `.update()`
-
----
-
 ## v0.5.1 — Fix Chat Notifications & Schema Column Alignments
 ### Fixed
 - Resolved Postgres error `42703` (`record "new" has no field "recipient_id"`) in `handle_new_chat_message` database trigger by correcting target column reference to `receiver_id`
