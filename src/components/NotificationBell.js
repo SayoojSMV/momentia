@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -21,13 +21,13 @@ export default function NotificationBell() {
 
       setUserId(user.id)
 
-      // Fetch initial notifications
+      // Fetch recent notifications
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(30) // Increased limit to gather context for grouping
 
       if (!error && data) {
         const uniqueData = data.filter((item, index, self) =>
@@ -86,28 +86,67 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleNotificationClick = async (item) => {
-    if (!item.is_read) {
+  // Group notifications by key (Chat link/actor or notification type)
+  const groupedNotifications = useMemo(() => {
+    const groups = []
+
+    notifications.forEach((item) => {
+      // Group key: for chats, group by link (e.g. /friends?chat=SENDER_ID). Otherwise group by item ID.
+      const groupKey = item.link && (item.type === 'chat' || item.type === 'chat_message')
+        ? item.link
+        : item.id
+
+      let group = groups.find((g) => g.key === groupKey)
+
+      if (!group) {
+        group = {
+          key: groupKey,
+          title: item.title,
+          type: item.type,
+          link: item.link,
+          items: [],
+          hasUnread: false,
+          latestTime: item.created_at,
+        }
+        groups.push(group)
+      }
+
+      group.items.push(item)
+      if (!item.is_read) group.hasUnread = true
+
+      // Ensure group maintains the timestamp of the newest message
+      if (new Date(item.created_at) > new Date(group.latestTime)) {
+        group.latestTime = item.created_at
+      }
+    })
+
+    // Sort groups so the ones with newest messages show up on top
+    return groups.sort((a, b) => new Date(b.latestTime) - new Date(a.latestTime))
+  }, [notifications])
+
+  const handleGroupClick = async (group) => {
+    const unreadItemIds = group.items.filter((item) => !item.is_read).map((item) => item.id)
+
+    if (unreadItemIds.length > 0) {
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
-        .eq('id', item.id)
+        .in('id', unreadItemIds)
 
       if (!error) {
         setNotifications((prev) =>
-          prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n))
+          prev.map((n) => (unreadItemIds.includes(n.id) ? { ...n, is_read: true } : n))
         )
-        setUnreadCount((prev) => Math.max(0, prev - 1))
+        setUnreadCount((prev) => Math.max(0, prev - unreadItemIds.length))
       }
     }
 
     setIsOpen(false)
 
-    if (item.link) {
-      router.push(item.link)
+    if (group.link) {
+      router.push(group.link)
     }
   }
-
   const markAllAsRead = async () => {
     if (!userId) return
 
@@ -189,46 +228,69 @@ export default function NotificationBell() {
           </div>
 
           {/* List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
-            {notifications.length === 0 ? (
+          <div className="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+            {groupedNotifications.length === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">No notifications yet</p>
               </div>
             ) : (
-              notifications.map((item, idx) => (
-                <div
-                  key={`${item.id}-${idx}`}
-                  onClick={() => handleNotificationClick(item)}
-                  className={`p-3.5 text-xs transition cursor-pointer flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
-                    item.is_read
-                      ? 'bg-transparent text-gray-600 dark:text-gray-400'
-                      : 'bg-blue-50/40 dark:bg-blue-950/20 text-gray-900 dark:text-white'
-                  }`}
-                >
-                  <span className="text-base mt-0.5 flex-shrink-0">
-                    {getTypeIcon(item.type)}
-                  </span>
+              groupedNotifications.map((group) => {
+                const unreadInGroupCount = group.items.filter((i) => !i.is_read).length
+                // Grab up to the last 5 messages (oldest to newest for stacked order)
+                const stackedItems = group.items.slice(0, 5).reverse()
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className={`truncate ${!item.is_read ? 'font-semibold' : 'font-medium'}`}>
-                        {item.title}
-                      </p>
-                      <span className="text-[10px] text-gray-400 ml-2 flex-shrink-0">
-                        {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                return (
+                  <div
+                    key={group.key}
+                    onClick={() => handleGroupClick(group)}
+                    className={`p-3.5 text-xs transition cursor-pointer flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${group.hasUnread
+                        ? 'bg-blue-50/40 dark:bg-blue-950/20 text-gray-900 dark:text-white'
+                        : 'bg-transparent text-gray-600 dark:text-gray-400'
+                      }`}
+                  >
+                    <span className="text-base mt-0.5 flex-shrink-0">
+                      {getTypeIcon(group.type)}
+                    </span>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <p className={`truncate ${group.hasUnread ? 'font-semibold' : 'font-medium'}`}>
+                            {group.title}
+                          </p>
+                          {group.items.length > 1 && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold flex-shrink-0">
+                              {group.items.length}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 ml-2 flex-shrink-0">
+                          {new Date(group.latestTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      {/* Stacked Preview for Messages */}
+                      <div className="space-y-1">
+                        {stackedItems.map((msg, idx) => (
+                          <div
+                            key={msg.id || idx}
+                            className={`p-1.5 rounded-lg text-[11px] leading-relaxed transition ${!msg.is_read
+                                ? 'bg-white dark:bg-gray-800/90 text-gray-900 dark:text-gray-100 shadow-sm border border-blue-100 dark:border-blue-900/40'
+                                : 'bg-gray-100/60 dark:bg-gray-800/40 text-gray-500 dark:text-gray-400'
+                              }`}
+                          >
+                            <p className="line-clamp-2">{msg.message}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
-                    <p className="text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
-                      {item.message}
-                    </p>
+                    {group.hasUnread && (
+                      <span className="h-2 w-2 rounded-full bg-blue-600 mt-1 flex-shrink-0" />
+                    )}
                   </div>
-
-                  {!item.is_read && (
-                    <span className="h-2 w-2 rounded-full bg-blue-600 mt-1 flex-shrink-0" />
-                  )}
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>
