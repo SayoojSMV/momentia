@@ -68,7 +68,7 @@
 - [x] Universal high-contrast dark mode & theme token alignment (#84)
 - [x] Real-time notification system — sender titles, direct chat links, & dynamic subscriptions (#79)
 - [x] Grouped / aggregated chat notification cards by thread with stacked message previews (#79)
-- [ ] Public landing page (logged-out)
+- [x] Public landing page (logged-out)
 - [ ] Real streak calculation
 
 ## Future Goals
@@ -76,4 +76,3 @@
 - [ ] Apple sign-in (requires Apple Developer account)
 - [ ] Custom domain
 - [ ] Real streak calculation (column exists, logic not yet implemented)
-- [ ] Public landing page (logged-out)

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.0 — Public Landing Page
+### Added
+- Built a responsive public landing page component (`LandingPage.js`) rendered for unauthenticated users
+- Hero banner with punchy value proposition and Google OAuth sign-in CTA buttons
+- Core feature showcase grid highlighting AI Roadmaps, Smart Timetable, Interactive Study, and Social & Chat
+- Header bar with blurred backdrop styling and direct OAuth trigger
+- Offset top layout padding (`-mt-16 md:-mt-14`) to ensure header sits flush at top of screen
+
+---
+
 ## v0.5.2 — Grouped Notification Threads & Stacked Previews
 ### Added
 - Notification thread aggregation inside `NotificationBell` grouping multiple chat messages from the same sender into a single interactive card
