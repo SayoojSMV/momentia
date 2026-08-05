@@ -77,4 +77,3 @@
 - [ ] Apple sign-in (requires Apple Developer account)
 - [ ] Custom domain
 - [ ] Real streak calculation (column exists, logic not yet implemented)
-- [ ] Public landing page (logged-out)
