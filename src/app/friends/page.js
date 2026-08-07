@@ -305,7 +305,7 @@ export default function FriendsPage() {
   if (loading) return null
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full flex flex-col h-[calc(100vh-6rem)] gap-6">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-semibold dark:text-white">Friends</h1>
@@ -314,8 +314,8 @@ export default function FriendsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+        <div className="space-y-4 overflow-y-auto">
           {/* Search */}
           <div className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl p-4">
             <p className="text-sm font-medium mb-3 dark:text-white">Find study mates</p>
@@ -469,18 +469,15 @@ export default function FriendsPage() {
         </div>
 
         {/* Chat panel */}
-        <div className="lg:col-span-2">
-          <div
-            className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl h-full flex flex-col"
-            style={{ minHeight: '500px' }}
-          >
+        <div className="lg:col-span-2 h-full min-h-0 flex flex-col">
+          <div className="bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl h-full flex flex-col min-h-0">
             {!selectedFriend ? (
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-gray-400 dark:text-gray-500 text-sm">Select a friend to start chatting</p>
               </div>
             ) : (
               <>
-                <div className="border-b dark:border-gray-800 px-5 py-3.5 flex items-center justify-between">
+                <div className="border-b dark:border-gray-800 px-5 py-3.5 flex items-center justify-between flex-shrink-0">
                   <p className="font-medium text-sm dark:text-white">{selectedFriend.full_name}</p>
                   <button
                     onClick={() => handleRemoveFriend(selectedFriend.id)}
@@ -490,7 +487,7 @@ export default function FriendsPage() {
                   </button>
                 </div>
 
-                <div className="overflow-y-auto p-4 space-y-1.5 flex-1" style={{ maxHeight: '420px' }}>
+                <div className="overflow-y-auto p-4 space-y-1.5 flex-1 min-h-0">
                   {messages.length === 0 && (
                     <p className="text-gray-400 dark:text-gray-500 text-sm text-center my-auto">
                       No messages yet — say hello!
@@ -556,7 +553,7 @@ export default function FriendsPage() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="border-t dark:border-gray-800 px-4 py-3 flex gap-2">
+                <div className="border-t dark:border-gray-800 px-4 py-3 flex gap-2 flex-shrink-0">
                   <input
                     type="text"
                     value={newMessage}
