@@ -1,34 +1,5 @@
 # Changelog
 
-## v0.6.1 — Responsive Chat Window
-### Changed
-- Refactored `FriendsPage` layout wrapper to calculate height dynamically based on browser viewport (`h-[calc(100vh-6rem)]`)
-- Replaced fixed inline height constraints (`minHeight: 500px`, `maxHeight: 420px`) on chat message panel with flexible flexbox classes (`flex-1 min-h-0 overflow-y-auto`)
-- Configured left sidebar (search & friends list) and right chat panel for independent scrolling within constrained viewport boundaries
-
----
-
-## v0.6.0 — Public Landing Page
-### Added
-- Built a responsive public landing page component (`LandingPage.js`) rendered for unauthenticated users
-- Hero banner with punchy value proposition and Google OAuth sign-in CTA buttons
-- Core feature showcase grid highlighting AI Roadmaps, Smart Timetable, Interactive Study, and Social & Chat
-- Header bar with blurred backdrop styling and direct OAuth trigger
-- Offset top layout padding (`-mt-16 md:-mt-14`) to ensure header sits flush at top of screen
-
----
-
-## v0.5.2 — Grouped Notification Threads & Stacked Previews
-### Added
-- Notification thread aggregation inside `NotificationBell` grouping multiple chat messages from the same sender into a single interactive card
-- Stacked preview bubbles displaying up to 5 recent messages per conversation thread with unread state indicators
-- Grouped mark-as-read interaction updating all notifications within a selected thread in a single batch query
-
-### Fixed
-- Fixed Supabase query method chain order in `NotificationBell` where `.in()` was incorrectly invoked before `.update()`
-
----
-
 ## v0.5.1 — Fix Chat Notifications & Schema Column Alignments
 ### Fixed
 - Resolved Postgres error `42703` (`record "new" has no field "recipient_id"`) in `handle_new_chat_message` database trigger by correcting target column reference to `receiver_id`
