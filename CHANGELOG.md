@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.1 — Responsive Chat Window
+### Changed
+- Refactored `FriendsPage` layout wrapper to calculate height dynamically based on browser viewport (`h-[calc(100vh-6rem)]`)
+- Replaced fixed inline height constraints (`minHeight: 500px`, `maxHeight: 420px`) on chat message panel with flexible flexbox classes (`flex-1 min-h-0 overflow-y-auto`)
+- Configured left sidebar (search & friends list) and right chat panel for independent scrolling within constrained viewport boundaries
+
+---
+
 ## v0.6.0 — Public Landing Page
 ### Added
 - Built a responsive public landing page component (`LandingPage.js`) rendered for unauthenticated users
