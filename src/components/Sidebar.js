@@ -29,6 +29,7 @@ export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
 
+  // Fetch initial user session & profile data
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
@@ -52,47 +53,36 @@ export default function Sidebar() {
     })
   }, [])
 
-  // Keep unread check for the Friends nav item inside drawer
+  // Check unread messages without triggering state loops
   useEffect(() => {
     if (!user) return
+
     const checkUnread = async () => {
       const { data } = await supabase
-        .from('messages').select('id')
-        .eq('receiver_id', user.id).eq('is_read', false).limit(1)
+        .from('messages')
+        .select('id')
+        .eq('receiver_id', user.id)
+        .eq('is_read', false)
+        .limit(1)
       setHasUnread(data?.length > 0)
     }
+
     checkUnread()
+
     const channel = supabase
       .channel(`sidebar-unread-${user.id}`)
       .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'messages',
+        event: '*', 
+        schema: 'public', 
+        table: 'messages',
         filter: `receiver_id=eq.${user.id}`,
       }, () => checkUnread())
       .subscribe()
-    return () => supabase.removeChannel(channel)
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [user])
-
-  useEffect(() => {
-    if (!user) return
-    const checkUnread = async () => {
-      const { data } = await supabase
-        .from('messages').select('id')
-        .eq('receiver_id', user.id).eq('is_read', false).limit(1)
-      setHasUnread(data?.length > 0)
-    }
-    if (pathname === '/friends') {
-      const timer = setTimeout(checkUnread, 1500)
-      return () => clearTimeout(timer)
-    } else {
-      checkUnread()
-    }
-  }, [user, pathname])
-
-  // Close sidebar drawer and profile menu on navigation
-  useEffect(() => {
-    setSidebarOpen(false)
-    setProfileMenuOpen(false)
-  }, [pathname])
 
   // Close profile menu on click outside
   useEffect(() => {
@@ -104,6 +94,11 @@ export default function Sidebar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const handleNavClick = () => {
+    setSidebarOpen(false)
+    setProfileMenuOpen(false)
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -141,7 +136,6 @@ export default function Sidebar() {
             <span className="text-xl leading-none">☰</span>
           </button>
 
-          {/* Clickable Brand Logo -> Redirects to Dashboard */}
           <Link 
             href="/" 
             className="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white hover:opacity-80 transition"
@@ -153,10 +147,8 @@ export default function Sidebar() {
 
         {/* Right Side: Quick Actions + Notification Bell + Profile Menu */}
         <div className="flex items-center gap-2 sm:gap-3" ref={profileMenuRef}>
-          {/* Notification Bell (Contains its own notification count badge) */}
           <NotificationBell />
 
-          {/* User Profile Avatar (Notification Dot Removed) */}
           <button
             onClick={() => setProfileMenuOpen((prev) => !prev)}
             className="relative focus:outline-none rounded-full ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-700 transition"
@@ -181,6 +173,7 @@ export default function Sidebar() {
 
               <Link
                 href="/profile"
+                onClick={handleNavClick}
                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 <span>👤</span>
@@ -189,6 +182,7 @@ export default function Sidebar() {
 
               <Link
                 href="/settings"
+                onClick={handleNavClick}
                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 <span>⚙️</span>
@@ -217,7 +211,7 @@ export default function Sidebar() {
         </div>
       </header>
 
-      {/* ── MODERN BACKDROP BLUR OVERLAY ── */}
+      {/* ── OVERLAY ── */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity duration-300"
@@ -225,17 +219,16 @@ export default function Sidebar() {
         />
       )}
 
-      {/* ── SLIDE-OUT OFF-CANVAS SIDEBAR ── */}
+      {/* ── SLIDE-OUT SIDEBAR ── */}
       <aside
         className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-900 border-r dark:border-gray-800 z-50 flex flex-col transform transition-transform duration-300 ease-in-out shadow-2xl ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Drawer Header */}
         <div className="h-14 flex items-center justify-between px-4 border-b dark:border-gray-800 flex-shrink-0">
           <Link 
             href="/" 
-            onClick={() => setSidebarOpen(false)}
+            onClick={handleNavClick}
             className="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white"
           >
             <span className="text-lg">✨</span>
@@ -249,7 +242,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Drawer Navigation Content */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
           {navItems.map((item) => {
             const active = pathname === item.href
@@ -258,7 +250,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setSidebarOpen(false)}
+                onClick={handleNavClick}
                 className={`flex items-center h-10 px-3 rounded-lg text-sm transition ${
                   active
                     ? 'text-black dark:text-white font-medium bg-gray-100 dark:bg-gray-800'
@@ -295,7 +287,7 @@ export default function Sidebar() {
                     <Link
                       key={subject.id}
                       href={`/subject/${subject.id}`}
-                      onClick={() => setSidebarOpen(false)}
+                      onClick={handleNavClick}
                       className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition ${
                         pathname === `/subject/${subject.id}`
                           ? 'text-black dark:text-white font-medium bg-gray-100 dark:bg-gray-800'
@@ -312,7 +304,6 @@ export default function Sidebar() {
           </div>
         </nav>
 
-        {/* Drawer Footer Actions */}
         <div className="border-t dark:border-gray-800 p-2 space-y-1">
           <button
             onClick={toggleDarkMode}
