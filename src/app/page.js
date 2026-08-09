@@ -27,80 +27,95 @@ export default function Dashboard() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let isMounted = true
+
+    const loadDashboardData = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+
       if (!session) {
         router.replace('/login')
         return
       }
-      setUser(session.user)
-      setLoading(false)
 
-      supabase
+      if (!isMounted) return
+      setUser(session.user)
+
+      // Fetch Subjects
+      const { data: subData } = await supabase
         .from('subjects')
         .select('*')
         .order('created_at', { ascending: true })
-        .then(({ data, error }) => {
-          if (!error) setSubjects(data)
-        })
 
+      // Fetch Today's Schedule
       const todayStr = new Date().toISOString().split('T')[0]
-      supabase
+      const { data: schedData } = await supabase
         .from('schedule')
         .select(`*, topics(name, minutes), subjects(name)`)
         .eq('user_id', session.user.id)
         .eq('scheduled_date', todayStr)
-        .then(({ data, error }) => {
-          if (!error) setTodaySessions(data)
-        })
 
-      supabase
+      if (schedData && isMounted) {
+        setTodaySessions(schedData)
+      }
+
+      // Fetch Profile Streak
+      const { data: profile } = await supabase
         .from('profiles')
         .select('current_streak')
         .eq('id', session.user.id)
         .single()
-        .then(({ data: profile }) => {
-          supabase
-            .from('topics')
-            .select('status, time_spent_seconds, units(subjects(user_id))')
-            .then(({ data: topics }) => {
-              if (!topics) return
-              const myTopics = topics.filter(
-                (t) => t.units?.subjects?.user_id === session.user.id
-              )
-              const total = myTopics.length
-              const completed = myTopics.filter((t) => t.status === 'completed').length
-              const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0
-              const totalSeconds = myTopics.reduce((sum, t) => sum + (t.time_spent_seconds || 0), 0)
-              const hours = Math.floor(totalSeconds / 3600)
-              const minutes = Math.floor((totalSeconds % 3600) / 60)
-              const timeSpent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes} min`
-              setStats({
-                status: 'On track',
-                streak: profile?.current_streak || 0,
-                completion: completionPct,
-                timeSpent,
-              })
-            })
-        })
 
-      supabase
+      // Fetch All Topics for Stats
+      const { data: topics } = await supabase
         .from('topics')
-        .select('status, units(subject_id)')
-        .then(({ data: allTopics }) => {
-          if (!allTopics) return
-          setSubjects((prev) =>
-            prev.map((subject) => {
-              const subjectTopics = allTopics.filter((t) => t.units?.subject_id === subject.id)
-              const total = subjectTopics.length
-              const done = subjectTopics.filter((t) => t.status === 'completed').length
-              return {
-                ...subject,
-                completion: total > 0 ? Math.round((done / total) * 100) : 0,
-              }
-            })
-          )
+        .select('status, time_spent_seconds, units(subject_id, subjects(user_id))')
+
+      let completionPct = 0
+      let timeSpentStr = '0 min'
+
+      if (topics) {
+        const myTopics = topics.filter(
+          (t) => t.units?.subjects?.user_id === session.user.id
+        )
+        const total = myTopics.length
+        const completed = myTopics.filter((t) => t.status === 'completed').length
+        completionPct = total > 0 ? Math.round((completed / total) * 100) : 0
+
+        const totalSeconds = myTopics.reduce((sum, t) => sum + (t.time_spent_seconds || 0), 0)
+        const hours = Math.floor(totalSeconds / 3600)
+        const minutes = Math.floor((totalSeconds % 3600) / 60)
+        timeSpentStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes} min`
+      }
+
+      // Calculate per-subject completion safely before state commit
+      const calculatedSubjects = (subData || []).map((subject) => {
+        if (!topics) return { ...subject, completion: 0 }
+        const subjectTopics = topics.filter((t) => t.units?.subject_id === subject.id)
+        const total = subjectTopics.length
+        const done = subjectTopics.filter((t) => t.status === 'completed').length
+        return {
+          ...subject,
+          completion: total > 0 ? Math.round((done / total) * 100) : 0,
+        }
+      })
+
+      if (isMounted) {
+        setSubjects(calculatedSubjects)
+        setStats({
+          status: 'On track',
+          streak: profile?.current_streak || 0,
+          completion: completionPct,
+          timeSpent: timeSpentStr,
         })
-    })
+        setLoading(false)
+      }
+    }
+
+    loadDashboardData()
+
+    return () => {
+      isMounted = false
+    }
   }, [router])
 
   const handleAddSubject = async () => {
@@ -116,7 +131,7 @@ export default function Dashboard() {
       .select()
       .single()
     if (!error) {
-      setSubjects((prev) => [...prev, data])
+      setSubjects((prev) => [...prev, { ...data, completion: 0 }])
       setNewSubject({ name: '', category: 'academics', exam_date: '' })
       setShowModal(false)
     }
@@ -297,7 +312,7 @@ function SubjectCard({ subject, onDelete }) {
         >
           ✕
         </button>
-        <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">{subject.category.replace('_', ' ')}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">{subject.category?.replace('_', ' ')}</p>
         <p className="font-medium mt-1 pr-4 dark:text-white">{subject.name}</p>
         <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 mt-3 mb-2">
           <div
