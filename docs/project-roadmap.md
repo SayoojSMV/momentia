@@ -59,7 +59,7 @@
 - [x] Settings page — Danger zone (#64)
 - [x] Responsive Sidebar - Improvement for phone window size (#72)
 
-## Phase 9 — Polish, UX & Responsiveness (In Progress)
+## Phase 9 — Polish, UX & Security Architecture ✅
 - [x] Responsive sidebar — mobile drawer (#72)
 - [x] Markdown rendering in topic content and chatbot
 - [x] Settings page — Danger zone (#64)
@@ -70,10 +70,11 @@
 - [x] Grouped / aggregated chat notification cards by thread with stacked message previews (#79)
 - [x] Responsive viewport-height chat container & message scroll panel
 - [x] Public landing page (logged-out)
-- [ ] Real streak calculation
+- [x] Client-side AuthGuard for route protection without middleware navigation freezes
+- [x] Dependent record cleanup on subject deletion
 
-## Future Goals
+## Phase 10 — Upcoming Goals
+- [ ] Real streak calculation engine (calculate current/longest streaks from session logs)
 - [ ] Microsoft sign-in (#17, blocked — environment issue)
 - [ ] Apple sign-in (requires Apple Developer account)
-- [ ] Custom domain
-- [ ] Real streak calculation (column exists, logic not yet implemented)
+- [ ] Custom domain configuration

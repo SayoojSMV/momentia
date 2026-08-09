@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.2 — Client-Side AuthGuard & Route Protection Refactor
+### Added
+- Created `AuthGuard` client-side wrapper (`src/components/AuthGuard.jsx`) to safely protect private routes (`/timetable`, `/friends`, `/settings`, `/chatbot`) and handle unauthenticated user redirects without server/client state desync.
+- Wrapped top-level application layout (`src/app/layout.js`) with `<AuthGuard>` to maintain smooth client-side routing transitions.
+
+### Fixed
+- Fixed infinite navigation freeze and loop back to `/login` when clicking sidebar sub-routes or entering direct URLs.
+- Removed blocking `NextResponse.redirect()` rules from `src/lib/supabase/middleware.js`, keeping middleware lightweight exclusively for cookie session refreshing (`supabase.auth.getUser()`).
+- Updated `handleDeleteSubject` in `src/app/page.js` to delete associated schedule items prior to subject deletion, preventing foreign key constraint errors and orphan records.
+
+---
+
 ## v0.6.1 — Responsive Chat Window
 ### Changed
 - Refactored `FriendsPage` layout wrapper to calculate height dynamically based on browser viewport (`h-[calc(100vh-6rem)]`)
@@ -62,12 +74,9 @@
 
 ## v0.3.0 — Polish and Responsiveness
 ### Added
-- Responsive sidebar — hidden on mobile, replaced by fixed top bar
-  with hamburger button that opens a full-width drawer overlay (#72)
-- Markdown rendering in topic study pages — headers, code blocks,
-  tables, lists all render properly instead of raw symbols
-- Markdown rendering in AI chatbot — same formatting support with
-  tighter spacing for the narrow chat bubble width
+- Responsive sidebar — hidden on mobile, replaced by fixed top bar with hamburger button that opens a full-width drawer overlay (#72)
+- Markdown rendering in topic study pages — headers, code blocks, tables, lists all render properly instead of raw symbols
+- Markdown rendering in AI chatbot — same formatting support with tighter spacing for the narrow chat bubble width
 - react-markdown + remark-gfm for GitHub Flavored Markdown support
 - @tailwindcss/typography for prose styling
 
@@ -89,26 +98,18 @@
 - Live friend name suggestions as user types in search (#36)
 - Friend suggestions for users with no friends yet (#37)
 - Topic search within subject roadmap page (#38)
-- Settings page — Account details: designation, institution,
-  year of study, prior subjects (#61)
-- Settings page — Study preferences: daily goal, session length,
-  rest day, exam reminder lead time (#62)
+- Settings page — Account details: designation, institution, year of study, prior subjects (#61)
+- Settings page — Study preferences: daily goal, session length, rest day, exam reminder lead time (#62)
 - Settings page — Appearance: dark mode toggle + sidebar default (#63)
-- Dark mode — full styling pass across all pages and components,
-  toggle in sidebar footer available on every page (#65)
+- Dark mode — full styling pass across all pages and components, toggle in sidebar footer available on every page (#65)
 - Add responsive sidebar — hidden on mobile with hamburger drawer (#72)
 - Settings page — Danger zone: delete account, reset data (#64)
 
-### Planned
-
 ### Fixed
-- Notification dot not clearing after reading messages
-  Root cause: missing UPDATE RLS policy on messages table causing
-  mark-as-read to silently fail (write 0 rows with no error)
+- Notification dot not clearing after reading messages (Missing UPDATE RLS policy on messages table)
 - Schema.sql syntax error in messages table definition
 - Conflicting duplicate SELECT policies on profiles table
-- Dark mode variants not applying — fixed by adding
-  @custom-variant dark directive in globals.css (Tailwind v4 requirement)
+- Dark mode variants not applying — fixed by adding `@custom-variant dark` directive in `globals.css`
 
 ---
 
@@ -119,7 +120,7 @@
 - Real-time chat with optimistic updates and indexed queries
 - Timetable scheduler (earliest-deadline-first algorithm)
 - Today panel on dashboard showing current day's sessions
-- Timetable page at /timetable grouped by date
+- Timetable page at `/timetable` grouped by date
 - Topic content generation via Gemini (saved permanently)
 - Roadmap generation without materials (uses subject name as context)
 - Roadmap regeneration preserves completed and in-progress topics
@@ -162,7 +163,7 @@
 - Supabase project integration
 - Full database schema (6 tables)
 - Row Level Security policies
-- Shared Supabase client at src/lib/supabase.js
+- Shared Supabase client at `src/lib/supabase.js`
 
 ---
 
