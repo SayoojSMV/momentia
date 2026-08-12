@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.3 — Dynamic Streak Calculation Engine & Completion Timestamps
+### Added
+- Integrated PostgreSQL RPC function call (`calculate_user_streak`) on topic completion and unmarking to recalculate and persist current and longest user streaks dynamically.
+- Added `completed_at` timestamp tracking upon marking topics as completed to power accurate activity calendar rendering and streak tracking.
+
+---
+
 ## v0.6.2 — Client-Side AuthGuard & Route Protection Refactor
 ### Added
 - Created `AuthGuard` client-side wrapper (`src/components/AuthGuard.jsx`) to safely protect private routes (`/timetable`, `/friends`, `/settings`, `/chatbot`) and handle unauthenticated user redirects without server/client state desync.
