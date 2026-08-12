@@ -140,10 +140,25 @@ export default function Dashboard() {
   const handleDeleteSubject = async (e, subjectId) => {
     e.preventDefault()
     e.stopPropagation()
-    const confirmed = window.confirm('Are you sure you want to remove this subject? All units, topics, and materials will be deleted.')
+
+    const confirmed = window.confirm(
+      'Are you sure you want to remove this subject? All associated units, topics, and schedule entries will be deleted.'
+    )
     if (!confirmed) return
+
+    // 1. Delete dependent schedule records first to prevent foreign key errors
+    await supabase.from('schedule').delete().eq('subject_id', subjectId)
+
+    // 2. Delete the subject (PostgreSQL cascade will clean up units/topics if configured, or this handles top-level)
     const { error } = await supabase.from('subjects').delete().eq('id', subjectId)
-    if (!error) setSubjects((prev) => prev.filter((s) => s.id !== subjectId))
+
+    if (error) {
+      alert('Failed to delete subject: ' + error.message)
+      return
+    }
+
+    // 3. Update UI state cleanly
+    setSubjects((prev) => prev.filter((s) => s.id !== subjectId))
   }
 
   if (loading) return null
