@@ -131,20 +131,51 @@ export default function TopicPage({ params }) {
 
   const handleMarkComplete = async () => {
     clearInterval(intervalRef.current)
-    await supabase
+
+    const now = new Date().toISOString()
+
+    // 1. Mark topic completed and attach completion timestamp
+    const { error } = await supabase
       .from('topics')
-      .update({ status: 'completed', time_spent_seconds: seconds })
+      .update({
+        status: 'completed',
+        time_spent_seconds: seconds,
+        completed_at: now,
+      })
       .eq('id', topicId)
+
+    if (error) {
+      alert('Failed to mark as complete: ' + error.message)
+      return
+    }
+
     setCompleted(true)
+
+    // 2. Trigger dynamic streak recalculation via RPC
+    const { data: sessionData } = await supabase.auth.getSession()
+    const userId = sessionData?.session?.user?.id
+
+    if (userId) {
+      await supabase.rpc('calculate_user_streak', { target_user_id: userId })
+    }
   }
 
   const handleMarkIncomplete = async () => {
     await supabase
       .from('topics')
-      .update({ status: 'not_started' })
+      .update({ status: 'not_started', completed_at: null })
       .eq('id', topicId)
+
     setCompleted(false)
     setPaused(false)
+
+    // Recalculate streak when unmarking
+    const { data: sessionData } = await supabase.auth.getSession()
+    const userId = sessionData?.session?.user?.id
+
+    if (userId) {
+      await supabase.rpc('calculate_user_streak', { target_user_id: userId })
+    }
   }
 
   const formatTime = (s) => {
@@ -173,13 +204,15 @@ export default function TopicPage({ params }) {
       {/* Topic Header & Timer */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b dark:border-gray-800">
         <div className="space-y-1.5">
-          <span className={`inline-block text-[11px] font-medium tracking-wide uppercase px-2.5 py-0.5 rounded-md ${
-            topic.difficulty === 'easy'
-              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50'
-              : topic.difficulty === 'medium'
-              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50'
-              : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50'
-          }`}>
+          <span
+            className={`inline-block text-[11px] font-medium tracking-wide uppercase px-2.5 py-0.5 rounded-md ${
+              topic.difficulty === 'easy'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50'
+                : topic.difficulty === 'medium'
+                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50'
+                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50'
+            }`}
+          >
             {topic.difficulty}
           </span>
           <h1 className="text-2xl font-semibold dark:text-white">{topic.name}</h1>
@@ -187,13 +220,15 @@ export default function TopicPage({ params }) {
 
         {/* Compact Timer */}
         <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-start gap-2">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition ${
-            completed
-              ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300'
-              : paused
-              ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-300'
-              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white'
-          }`}>
+          <div
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition ${
+              completed
+                ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+                : paused
+                ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-300'
+                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white'
+            }`}
+          >
             <span className="font-mono text-base font-semibold">
               {formatTime(seconds)}
             </span>
@@ -226,10 +261,13 @@ export default function TopicPage({ params }) {
         {generatingContent ? (
           <div className="py-12 text-center space-y-2">
             <div className="inline-block animate-spin text-gray-400">⏳</div>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Generating structured study content for this topic...</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Generating structured study content for this topic...
+            </p>
           </div>
         ) : content ? (
-          <div className="prose prose-sm dark:prose-invert max-w-none
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none
             prose-headings:font-semibold
             prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
             prose-code:bg-gray-100 prose-code:dark:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
@@ -237,7 +275,8 @@ export default function TopicPage({ params }) {
             prose-table:border-collapse prose-th:border prose-th:border-gray-200 prose-th:dark:border-gray-800 prose-th:px-3 prose-th:py-2 prose-th:bg-gray-50 prose-th:dark:bg-gray-800/50
             prose-td:border prose-td:border-gray-200 prose-td:dark:border-gray-800 prose-td:px-3 prose-td:py-2
             prose-a:text-black dark:prose-a:text-white prose-a:underline
-            prose-blockquote:border-l-black dark:prose-blockquote:border-l-white">
+            prose-blockquote:border-l-black dark:prose-blockquote:border-l-white"
+          >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {content}
             </ReactMarkdown>
