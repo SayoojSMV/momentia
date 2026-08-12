@@ -72,9 +72,9 @@
 - [x] Public landing page (logged-out)
 - [x] Client-side AuthGuard for route protection without middleware navigation freezes
 - [x] Dependent record cleanup on subject deletion
+- [x] Real streak calculation engine & timestamp tracking (`calculate_user_streak` RPC & `completed_at`)
 
 ## Phase 10 — Upcoming Goals
-- [ ] Real streak calculation engine (calculate current/longest streaks from session logs)
 - [ ] Microsoft sign-in (#17, blocked — environment issue)
 - [ ] Apple sign-in (requires Apple Developer account)
 - [ ] Custom domain configuration
