@@ -73,6 +73,7 @@
 - [x] Client-side AuthGuard for route protection without middleware navigation freezes
 - [x] Dependent record cleanup on subject deletion
 - [x] Real streak calculation engine & timestamp tracking (`calculate_user_streak` RPC & `completed_at`)
+- [x] Added `completed_at` schema column to `topics` table & fixed schema cache resolution error
 
 ## Phase 10 — Upcoming Goals
 - [ ] Microsoft sign-in (#17, blocked — environment issue)
