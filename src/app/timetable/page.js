@@ -24,7 +24,7 @@ export default function TimetablePage() {
   const fetchSchedule = async (userId) => {
     const { data, error } = await supabase
       .from('schedule')
-      .select(`*, topics(name, minutes, difficulty), subjects(name, category)`)
+      .select(`*, topics(id, name, minutes, difficulty, status), subjects(name, category)`)
       .eq('user_id', userId)
       .order('scheduled_date', { ascending: true })
     if (!error) setSchedule(data)
@@ -47,6 +47,51 @@ export default function TimetablePage() {
     }
     await fetchSchedule(user.id)
     setGenerating(false)
+  }
+
+  const handleToggleComplete = async (e, session) => {
+    e.stopPropagation()
+
+    if (!session.topics?.id) return
+
+    const isCompleted = session.topics.status === 'completed'
+    const newStatus = isCompleted ? 'not_started' : 'completed'
+    const now = newStatus === 'completed' ? new Date().toISOString() : null
+
+    // 1. Optimistic local state update
+    setSchedule((prev) =>
+      prev.map((item) =>
+        item.id === session.id
+          ? {
+              ...item,
+              topics: {
+                ...item.topics,
+                status: newStatus,
+              },
+            }
+          : item
+      )
+    )
+
+    // 2. Update database topic completion state
+    const { error } = await supabase
+      .from('topics')
+      .update({
+        status: newStatus,
+        completed_at: now,
+      })
+      .eq('id', session.topics.id)
+
+    if (error) {
+      // Revert if database write fails
+      await fetchSchedule(user.id)
+      return
+    }
+
+    // 3. Trigger dynamic streak recalculation
+    if (user?.id) {
+      await supabase.rpc('calculate_user_streak', { target_user_id: user.id })
+    }
   }
 
   const groupedByDate = schedule.reduce((acc, session) => {
@@ -124,30 +169,53 @@ export default function TimetablePage() {
                 {formatDate(date)}
               </p>
               <div className="space-y-2 w-full">
-                {sessions.map((session) => (
-                  <div
-                    key={session.id}
-                    onClick={() => router.push(`/subject/${session.subject_id}/topic/${session.topic_id}`)}
-                    className="w-full bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl px-5 py-4 flex items-center justify-between cursor-pointer hover:border-gray-300 dark:hover:border-gray-700 transition"
-                  >
-                    <div>
-                      <p className="text-sm font-medium dark:text-white">
-                        {session.topics?.name}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        {session.subjects?.name}
-                      </p>
+                {sessions.map((session) => {
+                  const isCompleted = session.topics?.status === 'completed'
+                  return (
+                    <div
+                      key={session.id}
+                      onClick={() => router.push(`/subject/${session.subject_id}/topic/${session.topic_id}`)}
+                      className={`w-full bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl px-5 py-4 flex items-center justify-between cursor-pointer hover:border-gray-300 dark:hover:border-gray-700 transition ${
+                        isCompleted ? 'opacity-60 bg-gray-50/50 dark:bg-gray-900/50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleComplete(e, session)}
+                          className={`w-5 h-5 rounded border flex items-center justify-center transition ${
+                            isCompleted
+                              ? 'bg-emerald-500 border-emerald-500 text-white'
+                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-500'
+                          }`}
+                          title={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
+                        >
+                          {isCompleted && <span className="text-xs">✓</span>}
+                        </button>
+                        <div>
+                          <p
+                            className={`text-sm font-medium dark:text-white ${
+                              isCompleted ? 'line-through text-gray-500 dark:text-gray-400' : ''
+                            }`}
+                          >
+                            {session.topics?.name}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            {session.subjects?.name}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {session.topics?.minutes} min
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 capitalize">
+                          {session.topics?.difficulty}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {session.topics?.minutes} min
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 capitalize">
-                        {session.topics?.difficulty}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}
