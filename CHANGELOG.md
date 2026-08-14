@@ -3,7 +3,10 @@
 ## v0.6.3 — Dynamic Streak Calculation Engine & Completion Timestamps
 ### Added
 - Integrated PostgreSQL RPC function call (`calculate_user_streak`) on topic completion and unmarking to recalculate and persist current and longest user streaks dynamically.
-- Added `completed_at` timestamp tracking upon marking topics as completed to power accurate activity calendar rendering and streak tracking.
+- Added `completed_at` timestamp tracking (`TIMESTAMPTZ`) upon marking topics as completed to power accurate activity calendar rendering and streak tracking.
+
+### Fixed
+- Fixed topic completion schema error (`Could not find the 'completed_at' column of 'topics' in the schema cache`) by adding `completed_at` column to the `topics` table and updating `handleMarkComplete` state handler.
 
 ---
 
