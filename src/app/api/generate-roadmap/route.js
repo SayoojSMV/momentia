@@ -77,16 +77,21 @@ Call save_roadmap exactly once with the complete roadmap.`
     const result = await model.generateContent(prompt)
     const response = result.response
 
-    // Extract the function call result
-    const functionCall = response.candidates?.[0]?.content?.parts?.find(
+    // Extract the function call from the Gemini response
+    const functionCallPart = response.candidates?.[0]?.content?.parts?.find(
       (part) => part.functionCall
     )
 
-    if (!functionCall) {
+    if (!functionCallPart || !functionCallPart.functionCall) {
       return Response.json({ error: 'No roadmap generated' }, { status: 500 })
     }
 
-    const { units } = toolUse.input
+    // Correctly extract units from functionCall args
+    const { units } = functionCallPart.functionCall.args
+
+    if (!units || !Array.isArray(units)) {
+      return Response.json({ error: 'Invalid roadmap structure generated' }, { status: 500 })
+    }
 
     // Fetch existing topics that are completed or in_progress — preserve these
     const { data: existingUnits } = await supabase
